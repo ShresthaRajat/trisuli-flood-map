@@ -36,7 +36,7 @@
   .layer { position: absolute; inset: 0; overflow: hidden; }
   .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
   .world { background: #05080B; }
-  #contourCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  #contourCanvas, #roadCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
   .world img { display: block; position: absolute; image-rendering: auto; pointer-events: none; -webkit-user-drag: none; }
   .tag {
     position: absolute; top: 10px; padding: 2px 10px; border-radius: 4px;
@@ -149,6 +149,7 @@
     <img id="imgPostPS" alt="Flood-morning satellite view, 26 August 2026 (PlanetScope)">
   </div></div>
   <canvas id="contourCanvas" aria-hidden="true"></canvas>
+  <canvas id="roadCanvas" aria-hidden="true"></canvas>
   <span class="tag" id="tagPre">Pre · 27 May / 3 Jun</span>
   <span class="tag" id="tagPost">Post · 26 Aug</span>
   <div id="markers"></div>
@@ -168,6 +169,7 @@
   <button id="markToggle" aria-pressed="true">Labels: on</button>
   <button id="contourToggle" aria-pressed="false">Contours: off</button>
   <button id="elevToggle" aria-pressed="true">Elev labels: on</button>
+  <button id="roadToggle" aria-pressed="false">Roads: off</button>
   <div class="seg" role="group" aria-label="Post-flood image source">
     <button id="srcPS">Post: 26 Aug (flood morning)</button>
     <button id="srcS2" class="on">27 Aug (clear)</button>
@@ -180,7 +182,7 @@
       <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
       <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
       <span><i class="dot d-city"></i>Major town / city (reference)</span>
-    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. Coordinates shown are approximate.</p>
+    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber) and bridges (cyan; thin cyan = suspension footbridges), from © OpenStreetMap contributors — alignments are pre-flood. Coordinates shown are approximate.</p>
   </details>
   <span id="coords"></span>
 </div>
@@ -247,7 +249,7 @@
   // dividing the elevation; classes stream in lazily as the zoom ladder needs them ---
   var contourCanvas = document.getElementById("contourCanvas");
   var cctx = contourCanvas.getContext("2d");
-  var contoursOn = true, contourLabelsOn = true;
+  var contoursOn = false, contourLabelsOn = true;
   // OpenTopoMap-style: sepia lines, index lines bolder, labels along the line
   var CLASSES = [
     { div: 1000, zmin: 0,  width: 1.3, alpha: 0.65, labelZ: 12 },
@@ -411,6 +413,98 @@
   document.getElementById("srcPS").onclick = function () { setPostSrc("ps"); };
   document.getElementById("src28").onclick = function () { setPostSrc("ps28"); };
 
+  // --- roads & bridges overlay (© OpenStreetMap contributors) ---
+  var roadCanvas = document.getElementById("roadCanvas");
+  var rctx = roadCanvas.getContext("2d");
+  var roadsOn = true, roadData = null, roadLoading = false;
+  var ROAD_STYLES = {
+    t: { zmin: 0,  fill: "#FFC24D", w: 2.6 },
+    p: { zmin: 0,  fill: "#FFD98A", w: 2.0 },
+    s: { zmin: 10, fill: "#F2E8C9", w: 1.4 }
+  };
+  var BRIDGE_STYLES = {
+    rb: { zmin: 11,   fill: "#52E5F5", w: 3.0 },
+    fb: { zmin: 12.5, fill: "#52E5F5", w: 1.6 }
+  };
+  function ensureRoads() {
+    if (roadData || roadLoading) return;
+    roadLoading = true;
+    fetch("assets/roads.json")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        j.roads.forEach(computeBB);
+        j.bridges.forEach(computeBB);
+        roadData = j;
+        drawRoads();
+      });
+  }
+  var roadRaf = 0;
+  function drawRoads() {
+    if (!roadsOn || roadRaf) return;
+    roadRaf = requestAnimationFrame(function () { roadRaf = 0; renderRoads(); });
+  }
+  function renderRoads() {
+    ensureRoads();
+    var dpr = window.devicePixelRatio || 1;
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (roadCanvas.width !== Math.round(w * dpr) || roadCanvas.height !== Math.round(h * dpr)) {
+      roadCanvas.width = Math.round(w * dpr); roadCanvas.height = Math.round(h * dpr);
+      roadCanvas.style.width = w + "px"; roadCanvas.style.height = h + "px";
+    }
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    rctx.clearRect(0, 0, w, h);
+    if (!roadData) return;
+    var z = zoomLevel();
+    var wx0 = -panX / scale, wy0 = -panY / scale;
+    var wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
+    rctx.lineJoin = "round"; rctx.lineCap = "round";
+    function strokeSet(list, styles, pass) {
+      Object.keys(styles).forEach(function (k) {
+        var st = styles[k];
+        var t = Math.min(1, Math.max(0, (z - st.zmin) / 0.7));
+        if (t <= 0) return;
+        rctx.lineWidth = pass === "casing" ? st.w + 1.6 : st.w;
+        rctx.globalAlpha = t * (pass === "casing" ? 0.55 : 0.95);
+        rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : st.fill;
+        rctx.beginPath();
+        list.forEach(function (L) {
+          if (L.c !== k) return;
+          var bb = L.bb;
+          if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
+          var p = L.p;
+          rctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+          for (var i = 2; i < p.length; i += 2) rctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+        });
+        rctx.stroke();
+      });
+    }
+    strokeSet(roadData.roads, ROAD_STYLES, "casing");
+    strokeSet(roadData.roads, ROAD_STYLES, "fill");
+    strokeSet(roadData.bridges, BRIDGE_STYLES, "casing");
+    strokeSet(roadData.bridges, BRIDGE_STYLES, "fill");
+    rctx.globalAlpha = 1;
+    if (showMarks && z >= 11) {
+      var seen = {};
+      rctx.font = '600 10px "Source Sans 3", "Segoe UI", sans-serif';
+      rctx.textAlign = "center"; rctx.textBaseline = "middle";
+      roadData.labels.forEach(function (L) {
+        var sx = L[0] * scale + panX, sy = L[1] * scale + panY;
+        if (sx < 40 || sx > w - 40 || sy < 14 || sy > h - 14) return;
+        var key = ((sx / 600) | 0) + "_" + ((sy / 600) | 0) + L[3];
+        if (seen[key]) return;
+        seen[key] = 1;
+        rctx.save();
+        rctx.translate(sx, sy);
+        rctx.rotate(L[2] * Math.PI / 180);
+        rctx.lineWidth = 3; rctx.strokeStyle = "rgba(12,17,22,0.85)";
+        rctx.strokeText(L[3], 0, 0);
+        rctx.fillStyle = "#FFE9B8";
+        rctx.fillText(L[3], 0, 0);
+        rctx.restore();
+      });
+    }
+  }
+
   var stage = document.getElementById("stage");
   var worlds = Array.prototype.slice.call(document.querySelectorAll(".world"));
   worlds.forEach(function (w) { w.style.width = WORLD_W + "px"; w.style.height = WORLD_H + "px"; });
@@ -446,6 +540,7 @@
       m.el.style.left = vx + "px"; m.el.style.top = vy + "px";
     });
     drawContours();
+    drawRoads();
     updateScalebar();
   }
 
@@ -554,6 +649,13 @@
     this.setAttribute("aria-pressed", String(contoursOn));
     apply();
   };
+  document.getElementById("roadToggle").onclick = function () {
+    roadsOn = !roadsOn;
+    roadCanvas.style.display = roadsOn ? "block" : "none";
+    this.textContent = "Roads: " + (roadsOn ? "on" : "off");
+    this.setAttribute("aria-pressed", String(roadsOn));
+    apply();
+  };
   document.getElementById("elevToggle").onclick = function () {
     contourLabelsOn = !contourLabelsOn;
     this.textContent = "Elev labels: " + (contourLabelsOn ? "on" : "off");
@@ -572,7 +674,7 @@
     if (e.key === "-") zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.3);
   });
 
-  fit(); scale = 1.1; panX = stage.clientWidth/2 - 21500*scale; panY = stage.clientHeight/2 - 19900*scale; apply(); setTimeout(apply, 4000);
+  fit(); scale = 1.2; panX = stage.clientWidth/2 - 21100*scale; panY = stage.clientHeight/2 - 19750*scale; apply(); setTimeout(apply, 4000);
 })();
 </script>
 
