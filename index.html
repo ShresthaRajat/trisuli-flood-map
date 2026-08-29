@@ -116,7 +116,7 @@
 
 <header>
   <h1>Trisuli - flood before and after</h1>
-  <span class="sub">pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2) · post: 27 Aug ~10:56 NPT day-after (Sentinel-2 10 m, clear) or 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) · drag the divider to compare, scroll or pinch to zoom, drag to pan</span>
+  <span class="sub">pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2) · post: 27 Aug ~10:56 NPT day-after (Sentinel-2 10 m, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT) · drag the divider to compare, scroll or pinch to zoom, drag to pan</span>
 </header>
 
 <div id="stage" aria-label="Interactive before-and-after satellite comparison of Trishuli Bazar">
@@ -126,6 +126,7 @@
   </div></div>
   <div class="layer" id="layerPost"><div class="world">
     <img id="imgPostS2" alt="Post-flood satellite view, 27 August 2026 (Sentinel-2)">
+    <img id="imgPost28" alt="Post-flood satellite mosaic, 28 August 2026 (PlanetScope)">
     <img id="imgPostPSWide" alt="Flood-morning satellite mosaic, 26 August 2026 (PlanetScope)">
     <img id="imgPostPS" alt="Flood-morning satellite view, 26 August 2026 (PlanetScope)">
   </div></div>
@@ -146,12 +147,13 @@
   <button id="zoomReset">Reset view</button>
   <button id="markToggle" aria-pressed="true">Labels: on</button>
   <div class="seg" role="group" aria-label="Post-flood image source">
-    <button id="srcS2" class="on">Post: 27 Aug (clear)</button>
-    <button id="srcPS">26 Aug (flood morning)</button>
+    <button id="srcPS">Post: 26 Aug (flood morning)</button>
+    <button id="srcS2" class="on">27 Aug (clear)</button>
+    <button id="src28">28 Aug (day 2)</button>
   </div>
   <details id="srcNotes">
     <summary>Imagery sources &amp; notes</summary>
-    <p>Map extent 85.10–85.60°E, 27.77–28.45°N, from Devighat upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~15 m) — heavy monsoon cloud, with the surge visible in gaps; areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~15 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
+    <p>Map extent 85.10–85.60°E, 27.77–28.45°N, from Devighat upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~15 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~15 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
   </details>
   <span id="coords"></span>
 </div>
@@ -200,20 +202,26 @@
   // 26 Aug flood morning: a 9-scene mosaic (passes ~10:46 and ~11:30 NPT, warped to the
   // world grid, transparent beyond the swaths) plus the original full-res scene over the
   // towns; the 27 Aug Sentinel-2 stays underneath as the full-extent backdrop.
+  var imgPost28 = place("imgPost28", POST_PS28, WORLD_W, WORLD_H);
   var imgPostPSWide = place("imgPostPSWide", POST_PS_WIDE, WORLD_W, WORLD_H);
   var imgPostPS = place("imgPostPS", POST_PS, 3349, 4482, POST_PS_XFORM);
   imgPostPS.style.clipPath = "polygon(0 0, 100% 0, 100% 96.1%, 0 80.2%)";
   var tagPost = document.getElementById("tagPost");
   function setPostSrc(which) {
-    imgPostPSWide.style.display = which === "s2" ? "none" : "block";
-    imgPostPS.style.display = which === "s2" ? "none" : "block";
-    tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)" : "Post · 26 Aug flood morning";
+    imgPost28.style.display = which === "ps28" ? "block" : "none";
+    imgPostPSWide.style.display = which === "ps" ? "block" : "none";
+    imgPostPS.style.display = which === "ps" ? "block" : "none";
+    tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)"
+      : which === "ps" ? "Post · 26 Aug flood morning"
+      : "Post · 28 Aug (PlanetScope) + 27 Aug";
     document.getElementById("srcS2").classList.toggle("on", which === "s2");
-    document.getElementById("srcPS").classList.toggle("on", which !== "s2");
+    document.getElementById("srcPS").classList.toggle("on", which === "ps");
+    document.getElementById("src28").classList.toggle("on", which === "ps28");
   }
   setPostSrc("s2");
   document.getElementById("srcS2").onclick = function () { setPostSrc("s2"); };
   document.getElementById("srcPS").onclick = function () { setPostSrc("ps"); };
+  document.getElementById("src28").onclick = function () { setPostSrc("ps28"); };
 
   var stage = document.getElementById("stage");
   var worlds = Array.prototype.slice.call(document.querySelectorAll(".world"));
