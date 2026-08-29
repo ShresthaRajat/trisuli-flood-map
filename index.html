@@ -78,19 +78,27 @@
     box-shadow: 0 0 0 3px rgba(220,45,38,0.55);
   }
   .marker.sev-origin .name { color: #FF7A6E; font-weight: 700; }
+  .marker.sev-city .pin { background: #4ADE80; box-shadow: 0 0 0 2px rgba(74,222,128,0.4); }
+  .marker.sev-city .name { color: #B4EFC9; }
   #legend {
-    position: absolute; left: 10px; bottom: 10px; z-index: 4;
     display: flex; flex-direction: column; gap: 3px;
-    padding: 6px 10px; border-radius: 6px; background: rgba(12,17,22,0.78);
-    font-size: 0.7rem; color: var(--muted); pointer-events: none;
+    margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--muted);
   }
-  #legend span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  #legend > span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
   #legend .dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid #08222A; flex: none; }
   #legend .d-origin { background: #8E0B0B; border-color: #FFD84D; }
   #legend .d-high { background: #FF5A4E; }
   #legend .d-mid { background: #FFA02E; }
-  #legend .d-def { background: #FFD84D; }
-  @media (max-width: 640px) { #legend { font-size: 0.62rem; padding: 4px 8px; } }
+  #legend .d-city { background: #4ADE80; }
+  #scalebar {
+    position: absolute; right: 10px; bottom: 10px; z-index: 4; pointer-events: none;
+    text-align: right; font-size: 0.72rem; font-weight: 600; color: var(--ink);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+  #scalebar .bar {
+    height: 6px; border: 2px solid #E6ECF0; border-top: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.7); margin-top: 3px; margin-left: auto;
+  }
   #controls {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
     padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
@@ -155,12 +163,7 @@
   <span class="tag" id="tagPre">Pre · 27 May / 3 Jun</span>
   <span class="tag" id="tagPost">Post · 26 Aug</span>
   <div id="markers"></div>
-  <div id="legend" aria-hidden="true">
-    <span><i class="dot d-origin"></i>Glacier-collapse origin</span>
-    <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
-    <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
-    <span><i class="dot d-def"></i>Reference point</span>
-  </div>
+  <div id="scalebar"><span id="scaleTxt"></span><div class="bar" id="scaleBar"></div></div>
   <div id="handle"><div class="grip">⇔</div></div>
 </div>
 
@@ -181,7 +184,12 @@
   </div>
   <details id="srcNotes">
     <summary>Imagery sources &amp; notes</summary>
-    <p>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
+    <p><span id="legend">
+      <span><i class="dot d-origin"></i>Glacier-collapse origin</span>
+      <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
+      <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
+      <span><i class="dot d-city"></i>Major town / city (reference)</span>
+    </span>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
   </details>
   <span id="coords"></span>
 </div>
@@ -217,8 +225,12 @@
     { x: 16075, y: 24388, name: "Galchhi", sev: "mid" },
     { x: 11956, y: 24090, name: "Gajuri", sev: "mid" },
     { x: 10315, y: 23791, name: "Malekhu", sev: "mid" },
-    { x: 3416,  y: 21662, name: "Kurintar" },
-    { x: 1440,  y: 22147, name: "Mugling (Aanbu Khaireni)" }
+    { x: 3416,  y: 21662, name: "Kurintar", sev: "city" },
+    { x: 1440,  y: 22147, name: "Mugling (Aanbu Khaireni)", sev: "city" },
+    { x: 26812, y: 27701, name: "Kathmandu", sev: "city" },
+    { x: 25990, y: 12594, name: "Dhunche", sev: "city" },
+    { x: 12495, y: 20108, name: "Dhading Besi", sev: "city" },
+    { x: 9976,  y: 15979, name: "Salyantar", sev: "city" }
   ];
 
   function place(id, src, w, h, transform) {
@@ -292,6 +304,18 @@
       m.el.style.display = vis ? "block" : "none";
       m.el.style.left = vx + "px"; m.el.style.top = vy + "px";
     });
+    updateScalebar();
+  }
+
+  // ~2.933 m per world px (33490 world px per degree of longitude at ~28.1°N)
+  function updateScalebar() {
+    var mPerScreenPx = 2.933 / scale;
+    var d = 1; // pick 1-2-5 progression, bar between ~55 and ~140 px
+    for (var p = 1; p <= 1e7; p *= 10) {
+      [1, 2, 5].forEach(function (s) { if (s * p / mPerScreenPx <= 140) d = s * p; });
+    }
+    document.getElementById("scaleBar").style.width = (d / mPerScreenPx) + "px";
+    document.getElementById("scaleTxt").textContent = d >= 1000 ? (d / 1000) + " km" : d + " m";
   }
 
   function fit() {
@@ -385,7 +409,6 @@
     showMarks = !showMarks;
     this.textContent = "Labels: " + (showMarks ? "on" : "off");
     this.setAttribute("aria-pressed", String(showMarks));
-    document.getElementById("legend").style.display = showMarks ? "flex" : "none";
     apply();
   };
   window.addEventListener("resize", apply);

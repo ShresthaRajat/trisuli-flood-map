@@ -5,17 +5,20 @@
 var WORLD_W = 36169, WORLD_H = 28011;
 var PS_XFORM = "matrix(1.020287, -0.015518, 0.015332, 1.011359, 19354.2, 18674.5)";
 var MARKERS = [
-  { x: 33222, y: 5864, name: "Collapse origin" },
-  { x: 28727, y: 6431, name: "Rasuwagadhi" },
-  { x: 27388, y: 10726, name: "Syabrubesi" },
-  { x: 22304, y: 17811, name: "Betrawati" },
-  { x: 21054, y: 19700, name: "Trisuli Bazar" },
-  { x: 19690, y: 22007, name: "Devighat" },
-  { x: 16075, y: 24388, name: "Galchhi" },
-  { x: 11956, y: 24090, name: "Gajuri" },
-  { x: 10315, y: 23791, name: "Malekhu" },
-  { x: 3416,  y: 21662, name: "Kurintar" },
-  { x: 1440,  y: 22147, name: "Mugling" }
+  { x: 33222, y: 5864, name: "Collapse origin", c: "#8E0B0B" },
+  { x: 28727, y: 6431, name: "Rasuwagadhi", c: "#FF5A4E" },
+  { x: 27388, y: 10726, name: "Syabrubesi", c: "#FF5A4E" },
+  { x: 22304, y: 17811, name: "Betrawati", c: "#FF5A4E" },
+  { x: 21054, y: 19700, name: "Trisuli Bazar", c: "#FF5A4E" },
+  { x: 19690, y: 22007, name: "Devighat", c: "#FF5A4E" },
+  { x: 16075, y: 24388, name: "Galchhi", c: "#FFA02E" },
+  { x: 10315, y: 23791, name: "Malekhu", c: "#FFA02E" },
+  { x: 3416,  y: 21662, name: "Kurintar", c: "#4ADE80" },
+  { x: 1440,  y: 22147, name: "Mugling", c: "#4ADE80" },
+  { x: 26812, y: 27701, name: "Kathmandu", c: "#4ADE80" },
+  { x: 25990, y: 12594, name: "Dhunche", c: "#4ADE80" },
+  { x: 12495, y: 20108, name: "Dhading Besi", c: "#4ADE80" },
+  { x: 9976,  y: 15979, name: "Salyantar", c: "#4ADE80" }
 ];
 function panel(imgs, S, cropLeft, cropTop, viewW, viewH) {
   var d = document.createElement("div");
@@ -34,7 +37,7 @@ function panel(imgs, S, cropLeft, cropTop, viewW, viewH) {
   });
   MARKERS.forEach(function (m) {
     var p = document.createElement("div");
-    p.style.cssText = "position:absolute;width:8px;height:8px;border-radius:50%;background:#FFD84D;border:1px solid #000;transform:translate(-50%,-50%);left:" + (m.x*S) + "px;top:" + (m.y*S) + "px";
+    p.style.cssText = "position:absolute;width:8px;height:8px;border-radius:50%;background:"+(m.c||"#FFD84D")+";border:1px solid #000;transform:translate(-50%,-50%);left:" + (m.x*S) + "px;top:" + (m.y*S) + "px";
     var t = document.createElement("div");
     t.textContent = m.name;
     t.style.cssText = "position:absolute;color:#FFE58F;font:600 10px sans-serif;background:rgba(0,0,0,.7);padding:0 3px;left:" + (m.x*S+6) + "px;top:" + (m.y*S-5) + "px";
