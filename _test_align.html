@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html><body style="margin:0;background:#111;display:flex;gap:6px">
+<script src="images.js"></script>
+<script>
+var WORLD_W = 16745, WORLD_H = 25397;
+var M = { x: 13798, y: 5864, name: "Collapse origin (approx.)" };
+function panel(src, S, cropLeft, cropTop, viewW, viewH) {
+  var d = document.createElement("div");
+  d.style.cssText = "position:relative;flex:none;width:" + viewW + "px;height:" + viewH + "px;overflow:hidden;background:#05080B";
+  var inner = document.createElement("div");
+  inner.style.cssText = "position:absolute;left:" + (-cropLeft*S) + "px;top:" + (-cropTop*S) + "px;width:" + (WORLD_W*S) + "px;height:" + (WORLD_H*S) + "px";
+  d.appendChild(inner);
+  var i = document.createElement("img");
+  i.src = src;
+  i.style.cssText = "position:absolute;left:0;top:0;width:" + WORLD_W + "px;height:" + WORLD_H + "px;transform-origin:0 0;transform:scale(" + S + ")";
+  inner.appendChild(i);
+  var p = document.createElement("div");
+  p.style.cssText = "position:absolute;width:10px;height:10px;border-radius:50%;background:#FFD84D;border:2px solid #000;transform:translate(-50%,-50%);left:" + (M.x*S) + "px;top:" + (M.y*S) + "px";
+  var t = document.createElement("div");
+  t.textContent = M.name;
+  t.style.cssText = "position:absolute;color:#FFE58F;font:600 11px sans-serif;background:rgba(0,0,0,.7);padding:1px 4px;left:" + (M.x*S+8) + "px;top:" + (M.y*S-6) + "px";
+  inner.appendChild(p); inner.appendChild(t);
+  document.body.appendChild(d);
+}
+// glacier area: world x ~12000-15400, y ~4400-7400
+panel(PRE_S2, 0.35, 12000, 4400, 1190, 1050);
+panel(POST_S2, 0.35, 12000, 4400, 1190, 1050);
+</script>
+</body></html>
