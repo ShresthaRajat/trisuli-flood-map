@@ -69,6 +69,28 @@
     margin-top: 4px; padding: 1px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: 600;
     background: rgba(12,17,22,0.8); color: #FFE58F; white-space: nowrap;
   }
+  .marker.sev-high .pin { background: #FF5A4E; box-shadow: 0 0 0 2px rgba(255,90,78,0.45); }
+  .marker.sev-high .name { color: #FFB3AB; }
+  .marker.sev-mid .pin { background: #FFA02E; box-shadow: 0 0 0 2px rgba(255,160,46,0.45); }
+  .marker.sev-mid .name { color: #FFD09B; }
+  .marker.sev-origin .pin {
+    width: 12px; height: 12px; background: #8E0B0B; border: 2px solid #FFD84D;
+    box-shadow: 0 0 0 3px rgba(220,45,38,0.55);
+  }
+  .marker.sev-origin .name { color: #FF7A6E; font-weight: 700; }
+  #legend {
+    position: absolute; left: 10px; bottom: 10px; z-index: 4;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 6px 10px; border-radius: 6px; background: rgba(12,17,22,0.78);
+    font-size: 0.7rem; color: var(--muted); pointer-events: none;
+  }
+  #legend span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  #legend .dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid #08222A; flex: none; }
+  #legend .d-origin { background: #8E0B0B; border-color: #FFD84D; }
+  #legend .d-high { background: #FF5A4E; }
+  #legend .d-mid { background: #FFA02E; }
+  #legend .d-def { background: #FFD84D; }
+  @media (max-width: 640px) { #legend { font-size: 0.62rem; padding: 4px 8px; } }
   #controls {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
     padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
@@ -133,6 +155,12 @@
   <span class="tag" id="tagPre">Pre · 27 May / 3 Jun</span>
   <span class="tag" id="tagPost">Post · 26 Aug</span>
   <div id="markers"></div>
+  <div id="legend" aria-hidden="true">
+    <span><i class="dot d-origin"></i>Glacier-collapse origin</span>
+    <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
+    <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
+    <span><i class="dot d-def"></i>Reference point</span>
+  </div>
   <div id="handle"><div class="grip">⇔</div></div>
 </div>
 
@@ -153,7 +181,7 @@
   </div>
   <details id="srcNotes">
     <summary>Imagery sources &amp; notes</summary>
-    <p>Map extent 85.10–85.60°E, 27.77–28.45°N, from Devighat upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~15 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~15 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
+    <p>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. Coordinates shown are approximate.</p>
   </details>
   <span id="coords"></span>
 </div>
@@ -161,29 +189,36 @@
 <script src="images.js"></script>
 <script>
 (function () {
-  // World spans 85.10-85.60°E, 27.77-28.45°N (north-up, per the Sentinel-2 archive
-  // georeferencing). The PlanetScope scenes only cover the band around
-  // 85.10-85.20°E, 27.83-27.95°N, and their frame is slightly rotated (~0.88°) and
-  // scaled relative to north-up; PS_XFORM is a least-squares affine fit (residual
-  // ~5 m) mapping the 3349x4482 PlanetScope frame into world coordinates.
-  var WORLD_W = 16745, WORLD_H = 25397;
-  var BW = 85.10, BE = 85.60, BN = 28.45, BS = 27.77;
-  var PS_XFORM = "matrix(1.020287, -0.015518, 0.015332, 1.011359, -70.0, 18674.5)";
+  // World spans 84.52-85.60°E, 27.70-28.45°N (north-up, per the Sentinel-2 archive
+  // georeferencing). The PlanetScope band scenes only cover ~85.10-85.20°E,
+  // 27.83-27.95°N, and their frame is slightly rotated (~0.88°) and scaled relative
+  // to north-up; PS_XFORM is a least-squares affine fit (residual ~5 m) mapping the
+  // 3349x4482 PlanetScope frame into world coordinates.
+  var WORLD_W = 36169, WORLD_H = 28011;
+  var BW = 84.52, BE = 85.60, BN = 28.45, BS = 27.70;
+  var PS_XFORM = "matrix(1.020287, -0.015518, 0.015332, 1.011359, 19354.2, 18674.5)";
   // The 26 Aug PlanetScope frame is within ~1 px of the 27 May frame; this composes
   // that measured sub-pixel delta into the same world transform.
-  var POST_PS_XFORM = "matrix(1.020095, -0.015548, 0.015381, 1.011884, -70.3, 18673.4)";
+  var POST_PS_XFORM = "matrix(1.020095, -0.015548, 0.015381, 1.011884, 19353.9, 18673.4)";
+  // sev: "origin" = collapse source, "high" = severe impact / mass casualties,
+  // "mid" = roads & infrastructure damaged, unset = reference point
   var MARKERS = [
-    { x: 13798, y: 5864, name: "Collapse origin (approx.)" },
-    { x: 9303, y: 6431, name: "Rasuwagadhi" },
-    { x: 8931, y: 7365, name: "Timure" },
-    { x: 7964, y: 10726, name: "Syabrubesi" },
-    { x: 3583, y: 14125, name: "Mailung" },
-    { x: 3054, y: 15716, name: "Simle" },
-    { x: 2880, y: 17811, name: "Betrawati" },
-    { x: 1630, y: 19700, name: "Trisuli Bazar" },
-    { x: 1452, y: 20093, name: "Bidur" },
-    { x: 1590, y: 20793, name: "Battar" },
-    { x: 266,  y: 22007, name: "Devighat" }
+    { x: 33222, y: 5864, name: "Collapse origin (approx.)", sev: "origin" },
+    { x: 28727, y: 6431, name: "Rasuwagadhi", sev: "high" },
+    { x: 28355, y: 7365, name: "Timure", sev: "high" },
+    { x: 27388, y: 10726, name: "Syabrubesi", sev: "high" },
+    { x: 23007, y: 14125, name: "Mailung", sev: "high" },
+    { x: 22478, y: 15716, name: "Simle", sev: "high" },
+    { x: 22304, y: 17811, name: "Betrawati", sev: "high" },
+    { x: 21054, y: 19700, name: "Trisuli Bazar", sev: "high" },
+    { x: 20876, y: 20093, name: "Bidur", sev: "high" },
+    { x: 21014, y: 20793, name: "Battar", sev: "high" },
+    { x: 19690, y: 22007, name: "Devighat", sev: "high" },
+    { x: 16075, y: 24388, name: "Galchhi", sev: "mid" },
+    { x: 11956, y: 24090, name: "Gajuri", sev: "mid" },
+    { x: 10315, y: 23791, name: "Malekhu", sev: "mid" },
+    { x: 3416,  y: 21662, name: "Kurintar" },
+    { x: 1440,  y: 22147, name: "Mugling (Aanbu Khaireni)" }
   ];
 
   function place(id, src, w, h, transform) {
@@ -236,7 +271,7 @@
 
   MARKERS.forEach(function (m) {
     var el = document.createElement("div");
-    el.className = "marker";
+    el.className = "marker" + (m.sev ? " sev-" + m.sev : "");
     el.innerHTML = '<div class="pin"></div><div class="name"></div>';
     el.querySelector(".name").textContent = m.name;
     markersBox.appendChild(el);
@@ -264,7 +299,7 @@
     scale = Math.min(stage.clientWidth / 3349, stage.clientHeight / 4482);
     minScale = Math.min(scale * 0.8, stage.clientHeight / WORLD_H, stage.clientWidth / WORLD_W);
     // center between Bidur and Battar
-    panX = stage.clientWidth / 2 - 1518 * scale;
+    panX = stage.clientWidth / 2 - 20942 * scale;
     panY = stage.clientHeight / 2 - 20440 * scale;
     var z = 1.6; zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, z);
     apply();
@@ -350,6 +385,7 @@
     showMarks = !showMarks;
     this.textContent = "Labels: " + (showMarks ? "on" : "off");
     this.setAttribute("aria-pressed", String(showMarks));
+    document.getElementById("legend").style.display = showMarks ? "flex" : "none";
     apply();
   };
   window.addEventListener("resize", apply);

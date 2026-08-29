@@ -2,15 +2,20 @@
 <html><body style="margin:0;background:#111;display:flex;gap:6px">
 <script src="images.js"></script>
 <script>
-var WORLD_W = 16745, WORLD_H = 25397;
+var WORLD_W = 36169, WORLD_H = 28011;
+var PS_XFORM = "matrix(1.020287, -0.015518, 0.015332, 1.011359, 19354.2, 18674.5)";
 var MARKERS = [
-  { x: 13798, y: 5864, name: "Collapse origin (approx.)" },
-  { x: 9303, y: 6431, name: "Rasuwagadhi" },
-  { x: 8931, y: 7365, name: "Timure" },
-  { x: 7964, y: 10726, name: "Syabrubesi" },
-  { x: 3583, y: 14125, name: "Mailung" },
-  { x: 2880, y: 17811, name: "Betrawati" },
-  { x: 1630, y: 19700, name: "Trisuli Bazar" }
+  { x: 33222, y: 5864, name: "Collapse origin" },
+  { x: 28727, y: 6431, name: "Rasuwagadhi" },
+  { x: 27388, y: 10726, name: "Syabrubesi" },
+  { x: 22304, y: 17811, name: "Betrawati" },
+  { x: 21054, y: 19700, name: "Trisuli Bazar" },
+  { x: 19690, y: 22007, name: "Devighat" },
+  { x: 16075, y: 24388, name: "Galchhi" },
+  { x: 11956, y: 24090, name: "Gajuri" },
+  { x: 10315, y: 23791, name: "Malekhu" },
+  { x: 3416,  y: 21662, name: "Kurintar" },
+  { x: 1440,  y: 22147, name: "Mugling" }
 ];
 function panel(imgs, S, cropLeft, cropTop, viewW, viewH) {
   var d = document.createElement("div");
@@ -18,10 +23,13 @@ function panel(imgs, S, cropLeft, cropTop, viewW, viewH) {
   var inner = document.createElement("div");
   inner.style.cssText = "position:absolute;left:" + (-cropLeft*S) + "px;top:" + (-cropTop*S) + "px;width:" + (WORLD_W*S) + "px;height:" + (WORLD_H*S) + "px";
   d.appendChild(inner);
-  imgs.forEach(function (src) {
+  imgs.forEach(function (spec) {
     var i = document.createElement("img");
-    i.src = src;
-    i.style.cssText = "position:absolute;left:0;top:0;width:" + WORLD_W + "px;height:" + WORLD_H + "px;transform-origin:0 0;transform:scale(" + S + ")";
+    i.src = spec.src;
+    i.style.cssText = "position:absolute;left:0;top:0;width:" + (spec.w||WORLD_W) + "px;height:" + (spec.h||WORLD_H) + "px;transform-origin:0 0;";
+    var t = "scale(" + S + ")";
+    if (spec.xform) t += " " + spec.xform;
+    i.style.transform = t;
     inner.appendChild(i);
   });
   MARKERS.forEach(function (m) {
@@ -34,11 +42,10 @@ function panel(imgs, S, cropLeft, cropTop, viewW, viewH) {
   });
   document.body.appendChild(d);
 }
-// 28 Aug mode composite, full extent
-panel([POST_S2, POST_PS28], 1180/WORLD_H, 0, 0, WORLD_W*1180/WORLD_H, 1180);
-// zoom on the debris corridor / origin area
-panel([POST_S2, POST_PS28], 0.21, 8600, 3600, 1000, 1180);
-// zoom on Rasuwagadhi-Timure junction
-panel([POST_S2, POST_PS28], 0.35, 7800, 5900, 620, 1180);
+var S = 1180 / WORLD_H;
+// pre composite full extent
+panel([{src: PRE_S2}, {src: PRE_PS, w: 3349, h: 4482, xform: PS_XFORM}], S, 0, 0, WORLD_W*S, 1180);
+// post 27 Aug full extent
+panel([{src: POST_S2}], S, 0, 0, WORLD_W*S, 1180);
 </script>
 </body></html>
