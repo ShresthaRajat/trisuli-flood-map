@@ -187,6 +187,7 @@
   #srcNotes a { color: var(--accent); }
   @media (max-width: 640px) {
     body { font-size: 14px; }
+    #tagPost { top: 38px; }   /* stack the two tags on narrow screens instead of overlapping */
     #controls { gap: 0.35rem; padding-left: 0.6rem; padding-right: 0.6rem; }
     button, .seg button, #srcNotes summary, #postSrc { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
     #postSrcLabel { font-size: 0.76rem; }
@@ -285,6 +286,7 @@
   // to north-up; PS_XFORM is a least-squares affine fit (residual ~5 m) mapping the
   // 3349x4482 PlanetScope frame into world coordinates.
   var WORLD_W = 36169, WORLD_H = 28011;
+  var LIGHT = window.matchMedia("(max-width: 640px)").matches || (navigator.deviceMemory && navigator.deviceMemory <= 4);
   var BW = 84.52, BE = 85.60, BN = 28.45, BS = 27.70;
   // Focus rectangle for this page: Trisuli Bazar and Bidur, SW 27.9016°N 85.1302°E to
   // NE 27.9497°N 85.1739°E (~4.3 x 5.3 km). The view is fitted to it, panning is clamped to it,
@@ -335,9 +337,9 @@
     { id: "hp-devighat", name: "Devighat Hydropower Station (14 MW)", x: 20252, y: 21214, zoom: 3.0, caption: "" , outside: true }
   ];
 
-  function place(id, src, w, h, transform, x, y) {
+  function place(id, src, w, h, transform, x, y, lazy) {
     var img = document.getElementById(id);
-    img.src = src;
+    if (lazy) img.dataset.src = src; else img.src = src;   // lazy layers load when first shown
     img.style.left = (x || 0) + "px"; img.style.top = (y || 0) + "px";
     img.style.width = w + "px"; img.style.height = h + "px";
     if (transform) { img.style.transformOrigin = "0 0"; img.style.transform = transform; }
@@ -347,8 +349,8 @@
   // build script (assets/trisuli/trisuli.json), so all of them share one placement: the integer
   // world-px box x 20435-21899, y 18685-20482. Nothing outside the box is shipped.
   var BOX_PLACE = { left: 20435, top: 18685, width: 1464, height: 1797 };
-  function placeBox(id, src) {
-    return place(id, src, BOX_PLACE.width, BOX_PLACE.height, null, BOX_PLACE.left, BOX_PLACE.top);
+  function placeBox(id, src, lazy) {
+    return place(id, src, BOX_PLACE.width, BOX_PLACE.height, null, BOX_PLACE.left, BOX_PLACE.top, lazy);
   }
   placeBox("imgPreS2", "assets/trisuli/pre_s2_20260603.jpg");
   // 27 May PlanetScope from the 16-bit surface-reflectance product, registered to the Sentinel-2 frame
@@ -356,9 +358,9 @@
   var imgPostS2 = placeBox("imgPostS2", "assets/trisuli/post_s2_20260827.jpg");
   // 26 Aug flood morning: the 9-scene mosaic plus the full-res scene over the town (both cut to the box);
   // the 27 Aug Sentinel-2 stays underneath as the backdrop.
-  var imgPost28 = placeBox("imgPost28", "assets/trisuli/ps28_mosaic.webp");
-  var imgPostPSWide = placeBox("imgPostPSWide", "assets/trisuli/ps26_mosaic.webp");
-  var imgPostPS = placeBox("imgPostPS", "assets/trisuli/post_ps_20260826.webp");
+  var imgPost28 = placeBox("imgPost28", "assets/trisuli/ps28_mosaic.webp", true);
+  var imgPostPSWide = placeBox("imgPostPSWide", "assets/trisuli/ps26_mosaic.webp", true);
+  var imgPostPS = placeBox("imgPostPS", "assets/trisuli/post_ps_20260826.webp", true);
   // --- vector contours: 50 m base interval, div = largest of 1000/500/200/100/50
   // dividing the elevation; classes stream in lazily as the zoom ladder needs them ---
   var contourCanvas = document.getElementById("contourCanvas");
@@ -517,10 +519,23 @@
   // a fixed grid over the whole world; only tiles intersecting the visible rect
   // (padded by half a tile) are ever fetched, and created <img>s are never removed.
   // bump when tiles are regenerated so browsers do not serve stale cached tiles
-  var TILE_VER = 3;
+  var TILE_VER = 4;
+  // small devices: cap tile detail (pyramid levels above LIGHT_MAX_F are skipped) and use the
+  // half-resolution rasters where the page offers them
+  var LIGHT_MAX_F = 4;
+  // Lazy tile layer. index.json is either a pyramid {overview, levels:[{F,T,dir,minScale,tiles}]}
+  // or the older single level {T,F,tiles,minTileScale,overview}. The 1-world-px overview is
+  // always shown; a level is active once scale >= minScale; only the two finest active levels
+  // keep tiles (the coarser one covers while the finer loads); tiles outside the view are dropped.
   function makeTileLayer(containerId, dir) {
     var container = document.getElementById(containerId);
-    var visible = false, indexLoaded = false, index = null, created = {};
+    var visible = false, indexLoaded = false, index = null, levels = [];
+    function mkImg(src, x, y, w, h) {
+      var img = document.createElement("img");
+      img.src = src; img.alt = ""; img.decoding = "async"; img.draggable = false;
+      img.style.left = x + "px"; img.style.top = y + "px"; img.style.width = w + "px"; img.style.height = h + "px";
+      return img;
+    }
     function ensureIndex() {
       if (indexLoaded || index) return; // already loaded or load in flight
       index = {}; // truthy sentinel marking "load in flight"
@@ -528,63 +543,52 @@
         .then(function (r) { return r.json(); })
         .then(function (j) {
           index = j;
-          index.keySet = {};
-          j.tiles.forEach(function (k) { index.keySet[k] = true; });
+          var lv = j.levels || [{ F: j.F, T: j.T, dir: "", minScale: j.minTileScale || 0, tiles: j.tiles }];
+          lv.forEach(function (L) {
+            if (LIGHT && L.F > LIGHT_MAX_F) return;
+            var keySet = {}; L.tiles.forEach(function (k) { keySet[k] = true; });
+            var el = document.createElement("div"); el.className = "tiles"; container.appendChild(el);
+            levels.push({ T: L.T, F: L.F, dir: L.dir ? dir + "/" + L.dir : dir, minScale: L.minScale || 0, keySet: keySet, el: el, created: {} });
+          });
           if (j.overview) {
-            // 1-world-px overview of the whole layer, shown at every zoom underneath the tiles
-            var ov = document.createElement("img");
-            ov.src = dir + "/" + j.overview.src + "?v=" + TILE_VER;
-            ov.alt = ""; ov.decoding = "async"; ov.draggable = false;
-            ov.style.left = j.overview.left + "px"; ov.style.top = j.overview.top + "px";
-            ov.style.width = j.overview.width + "px"; ov.style.height = j.overview.height + "px";
-            container.insertBefore(ov, container.firstChild);
+            var o = j.overview;
+            container.insertBefore(mkImg(dir + "/" + o.src + "?v=" + TILE_VER, o.left, o.top, o.width, o.height), container.firstChild);
           }
           indexLoaded = true;
           update();
         });
     }
+    function clearLevel(L) {
+      Object.keys(L.created).forEach(function (k) { L.el.removeChild(L.created[k]); delete L.created[k]; });
+    }
     function setVisible(v) {
       visible = v;
       container.style.display = v ? "block" : "none";
       if (v) { ensureIndex(); update(); }
-      else {
-        // a hidden layer keeps only its overview; tiles come back from the browser cache
-        Object.keys(created).forEach(function (k) { container.removeChild(created[k]); delete created[k]; });
-      }
+      else levels.forEach(clearLevel);   // a hidden layer keeps only its overview
     }
     function update() {
       if (!visible || !indexLoaded) return;
-      // below minTileScale the overview is sharper than the screen needs; skip tile fetches
-      if (index.minTileScale && scale < index.minTileScale) return;
-      var T = index.T;
-      var wx0 = -panX / scale, wy0 = -panY / scale;
-      var wx1 = (stage.clientWidth - panX) / scale, wy1 = (stage.clientHeight - panY) / scale;
-      wx0 -= T / 2; wy0 -= T / 2; wx1 += T / 2; wy1 += T / 2;
-      var tx0 = Math.floor(wx0 / T), tx1 = Math.floor(wx1 / T);
-      var ty0 = Math.floor(wy0 / T), ty1 = Math.floor(wy1 / T);
-      // drop tiles outside the (half-tile padded) view so decoded-image memory stays bounded;
-      // they come straight back from the browser cache when panned into view again
-      Object.keys(created).forEach(function (k) {
-        var p = k.split("_"), kx = +p[0], ky = +p[1];
-        if (kx < tx0 || kx > tx1 || ky < ty0 || ky > ty1) { container.removeChild(created[k]); delete created[k]; }
-      });
-      for (var tx = tx0; tx <= tx1; tx++) {
-        for (var ty = ty0; ty <= ty1; ty++) {
-          var key = tx + "_" + ty;
-          if (created[key] || !index.keySet[key]) continue;
-          var img = document.createElement("img");
-          img.src = dir + "/" + key + ".webp?v=" + TILE_VER;
-          img.alt = "";
-          img.decoding = "async";
-          img.draggable = false;
-          img.style.left = (tx * T) + "px";
-          img.style.top = (ty * T) + "px";
-          img.style.width = T + "px";
-          img.style.height = T + "px";
-          container.appendChild(img);
-          created[key] = img;
+      var active = levels.filter(function (L) { return scale >= L.minScale; });
+      levels.forEach(function (L) { if (active.indexOf(L) < 0) clearLevel(L); });
+      active.slice(0, Math.max(0, active.length - 2)).forEach(clearLevel);
+      active.slice(-2).forEach(function (L) {
+        var T = L.T;
+        var wx0 = -panX / scale - T / 2, wy0 = -panY / scale - T / 2;
+        var wx1 = (stage.clientWidth - panX) / scale + T / 2, wy1 = (stage.clientHeight - panY) / scale + T / 2;
+        var tx0 = Math.floor(wx0 / T), tx1 = Math.floor(wx1 / T), ty0 = Math.floor(wy0 / T), ty1 = Math.floor(wy1 / T);
+        Object.keys(L.created).forEach(function (k) {
+          var p = k.split("_"), kx = +p[0], ky = +p[1];
+          if (kx < tx0 || kx > tx1 || ky < ty0 || ky > ty1) { L.el.removeChild(L.created[k]); delete L.created[k]; }
+        });
+        for (var tx = tx0; tx <= tx1; tx++) {
+          for (var ty = ty0; ty <= ty1; ty++) {
+            var key = tx + "_" + ty;
+            if (L.created[key] || !L.keySet[key]) continue;
+            L.created[key] = L.el.appendChild(mkImg(L.dir + "/" + key + ".webp?v=" + TILE_VER, tx * T, ty * T, T, T));
+          }
         }
-      }
+      });
     }
     return { setVisible: setVisible, update: update };
   }
@@ -594,10 +598,15 @@
   var tilesVanPre = makeTileLayer("tilesVanPre", "assets/trisuli/tiles/vantor_pre");
   tilesVanPre.setVisible(true);
 
+  // show/hide a raster layer; lazy layers fetch their image the first time they are shown
+  function show(img, on) {
+    if (on && !img.getAttribute("src") && img.dataset.src) img.src = img.dataset.src;
+    img.style.display = on ? "block" : "none";
+  }
   function setPostSrc(which) {
-    imgPost28.style.display = which === "ps28" ? "block" : "none";
-    imgPostPSWide.style.display = which === "ps" ? "block" : "none";
-    imgPostPS.style.display = which === "ps" ? "block" : "none";
+    show(imgPost28, which === "ps28");
+    show(imgPostPSWide, which === "ps");
+    show(imgPostPS, which === "ps");
     tilesSky31.setVisible(which === "sky31");
     tilesWv28.setVisible(which === "wv28");
     tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)"
