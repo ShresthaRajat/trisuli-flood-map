@@ -154,6 +154,54 @@ def shift_ring(ring):
         out.append(r1(ring[i + 1] + dy))
     return out
 
+
+# Elevation cap (user request 5 Sep 2026): structures above ELEV_MAX metres are left out so
+# the hillsides stay clean; roads, rivers and key-location markers are not capped. Elevation
+# comes from a Copernicus GLO-30 window over the focus box, assets/trisuli/dem/glo30_focus.asc
+# (Int16 metres, Arc/Info ASCII grid), fetched with
+#   gdal_translate -ot Int16 -projwin 85.125 27.955 85.180 27.896 -of AAIGrid \
+#     /vsicurl/https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N27_00_E085_00_DEM/Copernicus_DSM_COG_10_N27_00_E085_00_DEM.tif assets/trisuli/dem/glo30_focus.asc
+# Override with ELEV_MAX=<metres> (0 disables the cap).
+ELEV_MAX = float(os.environ.get("ELEV_MAX", "600"))
+_DEM = None
+
+def _load_dem():
+    global _DEM
+    if _DEM is not None:
+        return _DEM
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "trisuli", "dem", "glo30_focus.asc")
+    hdr, rows = {}, []
+    with open(path) as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) == 2 and parts[0].lower() in ("ncols", "nrows", "xllcorner", "yllcorner", "cellsize", "nodata_value"):
+                hdr[parts[0].lower()] = float(parts[1])
+            elif parts:
+                rows.append([float(v) for v in parts])
+    _DEM = (hdr, rows)
+    return _DEM
+
+def elevation_at(x, y):
+    """Metres at world px (x, y) from the DEM window, bilinear; None outside the window."""
+    hdr, rows = _load_dem()
+    lon = BW + x / WORLD_W * (BE - BW)
+    lat = BN - y / WORLD_H * (BN - BS)
+    cs = hdr["cellsize"]; nc = int(hdr["ncols"]); nr = int(hdr["nrows"])
+    fx = (lon - hdr["xllcorner"]) / cs - 0.5
+    fy = (hdr["yllcorner"] + nr * cs - lat) / cs - 0.5
+    if fx < 0 or fy < 0 or fx > nc - 1 or fy > nr - 1:
+        return None
+    x0, y0 = int(fx), int(fy); x1, y1 = min(x0 + 1, nc - 1), min(y0 + 1, nr - 1)
+    tx, ty = fx - x0, fy - y0
+    return (rows[y0][x0] * (1 - tx) * (1 - ty) + rows[y0][x1] * tx * (1 - ty)
+            + rows[y1][x0] * (1 - tx) * ty + rows[y1][x1] * tx * ty)
+
+def above_cap(x, y):
+    if ELEV_MAX <= 0:
+        return False
+    e = elevation_at(x, y)
+    return e is not None and e > ELEV_MAX
+
 def ring_from_geom(geom):
     """geom: list of {"lat":..,"lon":..} -> flat [x,y,x,y,...] world px, rounded."""
     pts = []
@@ -593,6 +641,7 @@ def main():
     poi_points_by_class = {"school": [], "health": [], "worship": [], "civic": []}
 
     counts = {"buildings": 0, "areas": 0, "lines": 0, "pois": 0}
+    elev_dropped = {}
     building_class_hist = {}
     area_class_hist = {}
     line_class_hist = {}
@@ -693,16 +742,20 @@ def main():
         bb = bbox_of_ring(outer)
         if not bbox_intersects(bb, FOCUS_BBOX):
             continue
+        capped = above_cap(*ring_centroid(outer))   # grounds above the cap are not drawn,
+        if capped:                                   # but their key-location marker is kept
+            elev_dropped["areas"] = elev_dropped.get("areas", 0) + 1
         name, name_ne = get_name(tags) if get_name(tags)[0] else (None, None)
         area_obj = {"p": shift_ring(outer), "c": cls}
         if name:
             area_obj["n"] = name
             if name_ne:
                 area_obj["ne"] = name_ne
-        areas.append(area_obj)
-        area_class_hist[cls] = area_class_hist.get(cls, 0) + 1
-        if cls in area_polys_by_class:
-            area_polys_by_class[cls].append((outer, holes))
+        if not capped:
+            areas.append(area_obj)
+            area_class_hist[cls] = area_class_hist.get(cls, 0) + 1
+            if cls in area_polys_by_class:
+                area_polys_by_class[cls].append((outer, holes))
         # emit centroid POI for named school/health/worship/civic areas.
         # "civic" is a building/area class but NOT a valid poi class (pois.c has
         # police/gov/historic/other instead) -- remap it.
@@ -753,6 +806,9 @@ def main():
         bb = bbox_of_ring(outer)
         cx, cy = ring_centroid(outer)
         if not point_in_focus(cx, cy):
+            continue
+        if above_cap(cx, cy):
+            elev_dropped["buildings"] = elev_dropped.get("buildings", 0) + 1
             continue
         cls = building_class_from_tags(tags)
         if cls == "other":
@@ -810,6 +866,11 @@ def main():
     # carries OSM waterway centrelines, so drawing them here would duplicate it.
     for pl, tags, cls in raw_lines:
         if cls == "canal":
+            continue
+        _els = [elevation_at(pl[i], pl[i + 1]) for i in range(0, len(pl), 2)]
+        _els = [e for e in _els if e is not None]
+        if ELEV_MAX > 0 and _els and sum(_els) / len(_els) > ELEV_MAX:
+            elev_dropped["lines"] = elev_dropped.get("lines", 0) + 1
             continue
         bb = bbox_of_ring(pl) if len(pl) >= 4 else (min(pl[0::2]), min(pl[1::2]), max(pl[0::2]), max(pl[1::2]))
         if not bbox_intersects(bb, FOCUS_BBOX):
@@ -870,6 +931,8 @@ def main():
         "fetched": time.strftime("%Y-%m-%d", time.gmtime()),
         "bbox": [S, W, N, E],
         "counts": counts,
+        "elev_max_m": ELEV_MAX,
+        "elev_dropped": elev_dropped,
     }
 
     out = {
