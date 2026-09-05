@@ -68,12 +68,15 @@
   }
   .floatBtn .ic { display: inline-block; width: 20px; text-align: center; font-size: 16px; flex: none; line-height: 1; }
   .floatSep { height: 1px; background: #26313A; margin: 3px 4px; }
+  .layerSwitch { display: flex; gap: 4px; padding: 7px 7px 0; }
+  .layerBtn { flex: 1; padding: 6px 4px; font-size: 12px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div id="toolbar">
   <label class="fld">BG
+    <label style="display:inline-flex;align-items:center;gap:4px;margin-right:6px;color:#8FA0AB"><input type="checkbox" id="contourChk" checked> Contours</label>
     <select id="bgSelect">
       <option value="legion">5 Feb Vantor Legion (0.39m)</option>
       <option value="ps">27 May PlanetScope</option>
@@ -81,11 +84,18 @@
     </select>
   </label>
   <div class="sep"></div>
-  <button id="loadBtn" title="Re-fetch rivers.json">Load</button>
-  <button id="saveBtn" title="POST to /save/rivers">Save</button>
+  <label class="fld">Layer
+    <select id="layerSelect">
+      <option value="rivers">Rivers</option>
+      <option value="flood">Flood</option>
+    </select>
+  </label>
+  <div class="sep"></div>
+  <button id="loadBtn" title="Re-fetch the active layer's JSON">Load</button>
+  <button id="saveBtn" title="POST the active layer to its /save endpoint">Save</button>
   <span id="modMarker">●</span>
   <span id="saveStatus"></span>
-  <button id="downloadBtn" title="Download rivers.json">Download JSON</button>
+  <button id="downloadBtn" title="Download the active layer's JSON">Download JSON</button>
   <div class="sep"></div>
   <button id="undoBtn" class="undoBtnCls" title="Ctrl/Cmd+Z">Undo</button>
   <button id="redoBtn" class="redoBtnCls" title="Shift+Ctrl/Cmd+Z">Redo</button>
@@ -102,6 +112,10 @@
   <button class="toolbtn" data-tool="lineDashed" title="9">Draw dashed line</button>
   <button class="toolbtn" data-tool="label" title="0">Add label</button>
   <button class="toolbtn" data-tool="pan" title="P / hold Space">Pan</button>
+  <button class="toolbtn" data-tool="pen" title="M — red marks for screenshots, never saved">Pen</button>
+  <button id="clearMarksBtn" title="remove all pen marks">Clear marks</button>
+  <button id="marksToPolyBtn" title="join the pen strokes into one closed polygon on the active layer">Marks → polygon</button>
+  <button id="copyViewBtn" title="copy centre lat/lon, zoom and map link">Copy view</button>
   <div class="sep"></div>
   <button id="deleteBtn" title="Delete key — removes current selection">Delete selected</button>
   <div class="sep"></div>
@@ -131,6 +145,10 @@
   <canvas id="fgCanvas"></canvas>
   <div id="floatPanel">
     <div id="floatHeader">Edit</div>
+    <div class="layerSwitch">
+      <button class="layerBtn active" data-layer="rivers">Rivers</button>
+      <button class="layerBtn" data-layer="flood">Flood</button>
+    </div>
     <div class="floatBtns">
       <button class="toolbtn floatBtn" data-tool="select" title="1"><span class="ic">&#9678;</span>Select</button>
       <button class="toolbtn floatBtn" data-tool="moveVertex" title="2"><span class="ic">&#10021;</span>Move vertex</button>
@@ -144,6 +162,10 @@
       <button class="toolbtn floatBtn" data-tool="lineDashed" title="9"><span class="ic">&#9508;</span>Dashed line</button>
       <button class="toolbtn floatBtn" data-tool="label" title="0"><span class="ic">Aa</span>Add label</button>
       <button class="toolbtn floatBtn" data-tool="pan" title="P / hold Space"><span class="ic">&#9974;</span>Pan</button>
+      <button class="toolbtn floatBtn" data-tool="pen" title="M"><span class="ic">&#9998;</span>Pen (marks)</button>
+      <button class="floatBtn" id="clearMarksBtn2" title="remove all pen marks"><span class="ic">&#8709;</span>Clear marks</button>
+      <button class="floatBtn" id="marksToPolyBtn2" title="join the pen strokes into one closed polygon on the active layer"><span class="ic">&#11039;</span>Marks &rarr; polygon</button>
+      <button class="floatBtn" id="copyViewBtn2" title="copy centre lat/lon, zoom and map link"><span class="ic">&#9112;</span>Copy view</button>
       <div class="floatSep"></div>
       <button class="floatBtn undoBtnCls" title="Ctrl/Cmd+Z"><span class="ic">&#8630;</span>Undo</button>
       <button class="floatBtn redoBtnCls" title="Shift+Ctrl/Cmd+Z"><span class="ic">&#8631;</span>Redo</button>
@@ -167,9 +189,35 @@
   var BOX = { x0: 20435, y0: 18685, x1: 21899, y1: 20482, w: 1464, h: 1797 };
   var MPP = 2.93; // metres per world px
 
-  var data = { polys: [], lines: [], labels: [], source: "" };
-  var undoStack = [], redoStack = [];
-  var modified = false;
+  // Two editable layers share all the same tools/hit-testing/undo machinery below. `data` always
+  // points at the ACTIVE layer's editor object (polys/lines/labels[, extra keys for rivers]) —
+  // reassigned by setLayer()/undo()/redo()/loadLayer(), mutated in place everywhere else — so the
+  // rest of the file (selection, drawing, mutation helpers) is unaware layers even exist.
+  var layers = {
+    rivers: {
+      data: { polys: [], lines: [], labels: [], source: "" },
+      extra: {}, undoStack: [], redoStack: [], modified: false,
+      url: "assets/trisuli/rivers.json", saveUrl: "/save/rivers", isPolyOnly: false,
+      toSavePayload: function () { return this.data; }
+    },
+    flood: {
+      data: { polys: [], lines: [], labels: [] },
+      extra: {}, undoStack: [], redoStack: [], modified: false,
+      url: "assets/trisuli/flood.json", saveUrl: "/save/flood", isPolyOnly: true,
+      toSavePayload: function () {
+        var out = {}; Object.keys(this.extra).forEach(function (k) { out[k] = this.extra[k]; }, this);
+        out.path = this.data.polys; return out;
+      }
+    }
+  };
+  var activeLayer = "rivers";
+  var LAYER_STYLES = {
+    rivers: { fill: "rgba(0,210,255,0.22)", stroke: "rgba(0,230,255,0.95)", polyLineWidth: 1.5, lineFill: "rgba(0,230,255,0.85)", labelFill: "#9BE4FA" },
+    flood: { fill: "rgba(255,50,40,0.28)", stroke: "rgba(255,64,56,0.95)", polyLineWidth: 1.6, lineFill: "rgba(255,64,56,0.85)", labelFill: "#FFD9D6" }
+  };
+  function anyModified() { return layers.rivers.modified || layers.flood.modified; }
+
+  var data = layers.rivers.data;
 
   var view = { scale: 1, panX: 0, panY: 0 };
   var SCALE_MIN = 0.3, SCALE_MAX = 12;
@@ -183,6 +231,8 @@
   var panDrag = null;
   var floatDrag = null;      // floating panel reposition drag
   var draft = null;          // { kind:'poly'|'lineSolid'|'lineDashed', pts:[...] }
+  var marks = [];            // pen strokes in world px [x,y,x,y,...] — screenshot annotations, never saved
+  var penStroke = null;
   var cursorWorld = null;
   var spaceHeld = false;
   var justPanned = false;
@@ -201,6 +251,7 @@
   function cacheDom() {
     els.toolbar = document.getElementById("toolbar");
     els.bgSelect = document.getElementById("bgSelect");
+    els.layerSelect = document.getElementById("layerSelect");
     els.loadBtn = document.getElementById("loadBtn");
     els.saveBtn = document.getElementById("saveBtn");
     els.modMarker = document.getElementById("modMarker");
@@ -233,11 +284,14 @@
   }
 
   // ============================== history ==============================
+  // Undo/redo stacks are per-layer (layers[name].undoStack/redoStack), so undo always operates
+  // on the layer that is currently active and can never restore a stale copy of the other layer.
   function pushHistory() {
-    undoStack.push(JSON.stringify(data));
-    if (undoStack.length > 100) undoStack.shift();
-    redoStack.length = 0;
-    modified = true;
+    var L = layers[activeLayer];
+    L.undoStack.push(JSON.stringify(data));
+    if (L.undoStack.length > 100) L.undoStack.shift();
+    L.redoStack.length = 0;
+    L.modified = true;
     updateModifiedMarker();
     syncUndoRedoButtons();
   }
@@ -252,28 +306,33 @@
     else selection.vertex = null;
   }
   function undo() {
-    if (!undoStack.length) return;
-    redoStack.push(JSON.stringify(data));
-    data = JSON.parse(undoStack.pop());
+    var L = layers[activeLayer];
+    if (!L.undoStack.length) return;
+    L.redoStack.push(JSON.stringify(data));
+    data = JSON.parse(L.undoStack.pop());
+    L.data = data;
     dragMode = null; draft = null;
     keepSelectionIfValid();
-    modified = true; updateModifiedMarker(); syncUndoRedoButtons();
+    L.modified = true; updateModifiedMarker(); syncUndoRedoButtons();
     refreshSelectionFields(); markDirty();
   }
   function redo() {
-    if (!redoStack.length) return;
-    undoStack.push(JSON.stringify(data));
-    data = JSON.parse(redoStack.pop());
+    var L = layers[activeLayer];
+    if (!L.redoStack.length) return;
+    L.undoStack.push(JSON.stringify(data));
+    data = JSON.parse(L.redoStack.pop());
+    L.data = data;
     dragMode = null; draft = null;
     keepSelectionIfValid();
-    modified = true; updateModifiedMarker(); syncUndoRedoButtons();
+    L.modified = true; updateModifiedMarker(); syncUndoRedoButtons();
     refreshSelectionFields(); markDirty();
   }
   function updateModifiedMarker() {
-    els.modMarker.style.visibility = modified ? "visible" : "hidden";
+    els.modMarker.style.visibility = anyModified() ? "visible" : "hidden";
   }
   function syncUndoRedoButtons() {
-    var canUndo = undoStack.length > 0, canRedo = redoStack.length > 0;
+    var L = layers[activeLayer];
+    var canUndo = L.undoStack.length > 0, canRedo = L.redoStack.length > 0;
     document.querySelectorAll(".undoBtnCls").forEach(function (b) { b.disabled = !canUndo; });
     document.querySelectorAll(".redoBtnCls").forEach(function (b) { b.disabled = !canRedo; });
   }
@@ -310,6 +369,7 @@
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     bctx.clearRect(0, 0, w, h);
     renderBackground(bctx, w, h);
+    if (contoursOn) drawContourLines(bctx, w, h);
     var fctx = fgCanvas.getContext("2d");
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     fctx.clearRect(0, 0, w, h);
@@ -383,6 +443,51 @@
     if (which === "ps" && !psImage) { psImage = new Image(); psImage.onload = markDirty; psImage.src = "assets/trisuli/pre_ps_sr_20260527.webp"; }
     if (which === "s2" && !s2Image) { s2Image = new Image(); s2Image.onload = markDirty; s2Image.src = "assets/trisuli/post_s2_20260827.jpg"; }
   }
+  // ---- contour lines (Copernicus GLO-30, pre-cut to the box) drawn over the imagery ----
+  var contoursOn = true, contourSets = {}, contourLoading = {};
+  var CONTOUR_CLASSES = [
+    { key: "div1000", url: "assets/trisuli/contours/div1000.json", zmin: 0, w: 1.4, a: 0.7 },
+    { key: "div500", url: "assets/trisuli/contours/div500.json", zmin: 11, w: 1.4, a: 0.7 },
+    { key: "div200", url: "assets/trisuli/contours/div200.json", zmin: 12, w: 1.3, a: 0.65 },
+    { key: "div100", url: "assets/trisuli/contours/div100.json", zmin: 13, w: 0.9, a: 0.55 },
+    { key: "div50", url: "assets/trisuli/contours/div50.json", zmin: 13.5, w: 0.8, a: 0.45 },
+    { key: "div10", url: "assets/trisuli/contours/div10/4_4.json", zmin: 15, w: 0.6, a: 0.35 }
+  ];
+  function ensureContours(c) {
+    if (contourSets[c.key] || contourLoading[c.key]) return;
+    contourLoading[c.key] = true;
+    fetch(c.url).then(function (r) { return r.json(); }).then(function (j) { contourSets[c.key] = j.lines || []; markDirty(); }).catch(function () { contourSets[c.key] = []; });
+  }
+  function drawContourLines(ctx, w, h) {
+    var z = 13 + Math.log2(view.scale / 0.174);
+    var wx0 = -view.panX / view.scale, wy0 = -view.panY / view.scale, wx1 = (w - view.panX) / view.scale, wy1 = (h - view.panY) / view.scale;
+    ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round";
+    CONTOUR_CLASSES.forEach(function (c) {
+      if (z < c.zmin) return;
+      ensureContours(c);
+      var lines = contourSets[c.key]; if (!lines) return;
+      ctx.lineWidth = c.w; ctx.globalAlpha = c.a; ctx.strokeStyle = c.key === "div1000" || c.key === "div500" ? "#B87333" : "#C89A5B";
+      ctx.beginPath();
+      lines.forEach(function (L) {
+        var p = L.p, minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+        for (var i = 0; i < p.length; i += 2) { if (p[i] < minx) minx = p[i]; if (p[i] > maxx) maxx = p[i]; if (p[i + 1] < miny) miny = p[i + 1]; if (p[i + 1] > maxy) maxy = p[i + 1]; }
+        if (maxx < wx0 || minx > wx1 || maxy < wy0 || miny > wy1) return;
+        ctx.moveTo(p[0] * view.scale + view.panX, p[1] * view.scale + view.panY);
+        for (var k = 2; k < p.length; k += 2) ctx.lineTo(p[k] * view.scale + view.panX, p[k + 1] * view.scale + view.panY);
+      });
+      ctx.stroke();
+      if (z >= 13 && (c.key === "div100" || c.key === "div500" || c.key === "div1000" || c.key === "div200")) {
+        ctx.globalAlpha = 0.9; ctx.font = "600 10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        lines.forEach(function (L, idx) {
+          if (idx % 3) return;
+          var p = L.p, m = Math.floor(p.length / 4) * 2; var sx = p[m] * view.scale + view.panX, sy = p[m + 1] * view.scale + view.panY;
+          if (sx < 0 || sx > w || sy < 0 || sy > h) return;
+          ctx.lineWidth = 3; ctx.strokeStyle = "rgba(12,17,22,0.85)"; ctx.strokeText(L.e + " m", sx, sy); ctx.fillStyle = "#E0B27A"; ctx.fillText(L.e + " m", sx, sy);
+        });
+      }
+    });
+    ctx.restore();
+  }
   function renderBackground(ctx, w, h) {
     ctx.fillStyle = "#05080B"; ctx.fillRect(0, 0, w, h);
     if (bgMode === "legion") {
@@ -399,18 +504,23 @@
   function setBgMode(v) { bgMode = v; ensureBgImage(v); markDirty(); }
 
   // ============================== overlay render ==============================
-  function renderOverlay(ctx, w, h) {
+  // Draws one layer's geometry (polys/lines/labels) in its own colour, at the given opacity.
+  // The inactive layer is rendered dimmed underneath and is never involved in hit-testing --
+  // hit-testing only ever reads `data`, which always aliases the ACTIVE layer.
+  function renderLayerGeometry(ctx, ldata, style, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.lineJoin = "round";
     ctx.beginPath();
-    data.polys.forEach(function (p) {
+    ldata.polys.forEach(function (p) {
       if (p.length < 6) return;
       ctx.moveTo(p[0] * view.scale + view.panX, p[1] * view.scale + view.panY);
       for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * view.scale + view.panX, p[i + 1] * view.scale + view.panY);
       ctx.closePath();
     });
-    ctx.fillStyle = "rgba(0,210,255,0.22)";
+    ctx.fillStyle = style.fill;
     ctx.fill("evenodd");
-    ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(0,230,255,0.95)";
+    ctx.lineWidth = style.polyLineWidth; ctx.strokeStyle = style.stroke;
     ctx.stroke();
 
     ctx.lineCap = "round";
@@ -418,8 +528,8 @@
       ctx.beginPath();
       ctx.lineWidth = cls === "c" ? 1.6 : 1.1;
       ctx.setLineDash(cls === "c" ? [] : [4, 3]);
-      ctx.strokeStyle = "rgba(0,230,255,0.85)";
-      data.lines.forEach(function (L) {
+      ctx.strokeStyle = style.lineFill;
+      ldata.lines.forEach(function (L) {
         if (L.c !== cls || L.p.length < 4) return;
         var p = L.p;
         ctx.moveTo(p[0] * view.scale + view.panX, p[1] * view.scale + view.panY);
@@ -431,17 +541,23 @@
 
     ctx.font = 'italic 600 11px "Source Sans 3", "Segoe UI", sans-serif';
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    data.labels.forEach(function (L) {
+    ldata.labels.forEach(function (L) {
       var sx = L[0] * view.scale + view.panX, sy = L[1] * view.scale + view.panY;
       ctx.save();
       ctx.translate(sx, sy);
       ctx.rotate((L[2] || 0) * Math.PI / 180);
       ctx.lineWidth = 3; ctx.strokeStyle = "rgba(12,17,22,0.85)";
       ctx.strokeText(L[3], 0, 0);
-      ctx.fillStyle = "#9BE4FA";
+      ctx.fillStyle = style.labelFill;
       ctx.fillText(L[3], 0, 0);
       ctx.restore();
     });
+    ctx.restore();
+  }
+  function renderOverlay(ctx, w, h) {
+    var inactiveName = activeLayer === "rivers" ? "flood" : "rivers";
+    renderLayerGeometry(ctx, layers[inactiveName].data, LAYER_STYLES[inactiveName], 0.35);
+    renderLayerGeometry(ctx, layers[activeLayer].data, LAYER_STYLES[activeLayer], 1);
 
     drawSelection(ctx);
     drawDraft(ctx);
@@ -449,6 +565,7 @@
     ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1;
     ctx.strokeRect(BOX.x0 * view.scale + view.panX, BOX.y0 * view.scale + view.panY, BOX.w * view.scale, BOX.h * view.scale);
 
+    drawMarks(ctx);
     drawScaleBar(ctx, w, h);
   }
 
@@ -523,6 +640,21 @@
     var best = candidates[0], bestDiff = Infinity;
     candidates.forEach(function (c) { var diff = Math.abs(c - rough); if (diff < bestDiff) { bestDiff = diff; best = c; } });
     return best;
+  }
+  // red pen marks (screenshot annotations); they pan and zoom with the map
+  function drawMarks(ctx) {
+    if (!marks.length) return;
+    ctx.save();
+    ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(255,40,40,0.95)";
+    marks.forEach(function (m) {
+      if (m.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(m[0] * view.scale + view.panX, m[1] * view.scale + view.panY);
+      if (m.length === 2) ctx.lineTo(m[0] * view.scale + view.panX + 0.1, m[1] * view.scale + view.panY);
+      for (var i = 2; i < m.length; i += 2) ctx.lineTo(m[i] * view.scale + view.panX, m[i + 1] * view.scale + view.panY);
+      ctx.stroke();
+    });
+    ctx.restore();
   }
   function drawScaleBar(ctx, w, h) {
     var meters = niceScaleMeters(100);
@@ -812,6 +944,7 @@
 
   // ============================== toolbar / field wiring ==============================
   function setTool(name) {
+    if (layers[activeLayer].isPolyOnly && (name === "lineSolid" || name === "lineDashed" || name === "label")) return;
     if (tool === name && name !== "select") { /* allow reselecting select */ }
     tool = name;
     draft = null;
@@ -822,6 +955,35 @@
     mapWrap.style.cursor = name === "pan" ? "grab" : (name === "select" ? "default" : "crosshair");
     updateStatus();
     markDirty();
+  }
+
+  // Switching layers repoints `data` at the other layer's editor object -- every tool/hit-test/
+  // mutation helper above reads/writes `data` and so keeps working unmodified. The layer not
+  // currently active is only ever drawn (dimmed); it is never touched by hit-testing.
+  function setLayer(name) {
+    if (!layers[name] || name === activeLayer) return;
+    dragMode = null; draft = null; panDrag = null;
+    activeLayer = name;
+    data = layers[name].data;
+    selection = null;
+    if (layers[name].isPolyOnly && (tool === "lineSolid" || tool === "lineDashed" || tool === "label")) setTool("select");
+    updateDrawToolAvailability();
+    updateLayerUI();
+    updateModifiedMarker();
+    syncUndoRedoButtons();
+    refreshSelectionFields();
+    markDirty();
+  }
+  function updateLayerUI() {
+    els.layerSelect.value = activeLayer;
+    document.querySelectorAll(".layerBtn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.layer === activeLayer);
+    });
+  }
+  function updateDrawToolAvailability() {
+    var floodOnly = layers[activeLayer].isPolyOnly;
+    document.querySelectorAll('.toolbtn[data-tool="lineSolid"], .toolbtn[data-tool="lineDashed"], .toolbtn[data-tool="label"]')
+      .forEach(function (b) { b.disabled = floodOnly; });
   }
 
   function refreshSelectionFields() {
@@ -889,11 +1051,11 @@
   }
 
   // ============================== io ==============================
-  function downloadJSON(text) {
+  function downloadJSON(text, filename) {
     var blob = new Blob([text], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = "rivers.json";
+    a.href = url; a.download = filename || "data.json";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
@@ -902,35 +1064,53 @@
     function p(n) { return (n < 10 ? "0" : "") + n; }
     return p(d.getHours()) + ":" + p(d.getMinutes());
   }
+  // Save/Load/Download always act on the ACTIVE layer only.
   function doSave() {
-    var body = JSON.stringify(data);
+    var name = activeLayer, L = layers[name];
+    var body = JSON.stringify(L.toSavePayload());
     els.saveStatus.textContent = "Saving…";
-    fetch("/save/rivers", { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
+    fetch(L.saveUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function () {
-        modified = false; updateModifiedMarker();
-        els.saveStatus.textContent = "Saved ✓ " + nowTimeStr();
+        L.modified = false; updateModifiedMarker();
+        els.saveStatus.textContent = "Saved " + name + " ✓ " + nowTimeStr();
       })
       .catch(function (err) {
-        downloadJSON(body);
-        els.saveStatus.textContent = "Save failed (" + err.message + ") — downloaded rivers.json instead";
+        downloadJSON(body, name + ".json");
+        els.saveStatus.textContent = "Save failed (" + err.message + ") — downloaded " + name + ".json instead";
       });
   }
-  function loadRivers() {
-    fetch("assets/trisuli/rivers.json?v=" + Date.now())
+  // Loads one layer's JSON from disk, converting flood's {path, ...} file shape to the internal
+  // {polys, lines, labels} editor shape (extra keys like `meta` are stashed on L.extra and merged
+  // back in on save); rivers' file shape already IS the editor shape, so it's used as-is.
+  function loadLayer(name) {
+    var L = layers[name];
+    fetch(L.url + "?v=" + Date.now())
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        data = j;
-        if (!Array.isArray(data.polys)) data.polys = [];
-        if (!Array.isArray(data.lines)) data.lines = [];
-        if (!Array.isArray(data.labels)) data.labels = [];
-        undoStack = []; redoStack = []; modified = false; selection = null;
-        updateModifiedMarker(); refreshSelectionFields();
-        els.saveStatus.textContent = "Loaded";
+        if (name === "flood") {
+          L.data = { polys: Array.isArray(j.path) ? j.path : [], lines: [], labels: [] };
+          var extra = {};
+          Object.keys(j).forEach(function (k) { if (k !== "path") extra[k] = j[k]; });
+          L.extra = extra;
+        } else {
+          if (!Array.isArray(j.polys)) j.polys = [];
+          if (!Array.isArray(j.lines)) j.lines = [];
+          if (!Array.isArray(j.labels)) j.labels = [];
+          L.data = j;
+          L.extra = {};
+        }
+        L.undoStack = []; L.redoStack = []; L.modified = false;
+        if (name === activeLayer) {
+          data = L.data;
+          selection = null;
+          updateModifiedMarker(); refreshSelectionFields(); syncUndoRedoButtons();
+        }
+        els.saveStatus.textContent = "Loaded " + name;
         markDirty();
       })
       .catch(function (err) {
-        els.saveStatus.textContent = "Load failed: " + err.message;
+        els.saveStatus.textContent = "Load failed (" + name + "): " + err.message;
       });
   }
 
@@ -939,14 +1119,19 @@
 
   function bindEvents() {
     els.bgSelect.addEventListener("change", function () { setBgMode(this.value); });
+    document.getElementById("contourChk").addEventListener("change", function () { contoursOn = this.checked; markDirty(); });
+    els.layerSelect.addEventListener("change", function () { setLayer(this.value); });
+    document.querySelectorAll(".layerBtn").forEach(function (b) {
+      b.addEventListener("click", function () { setLayer(this.dataset.layer); });
+    });
     els.loadBtn.addEventListener("click", function () {
-      if (modified && !window.confirm("Discard unsaved changes and reload?")) return;
-      loadRivers();
+      if (layers[activeLayer].modified && !window.confirm("Discard unsaved changes to " + activeLayer + " and reload?")) return;
+      loadLayer(activeLayer);
     });
     els.saveBtn.addEventListener("click", doSave);
     els.downloadBtn.addEventListener("click", function () {
-      downloadJSON(JSON.stringify(data));
-      els.saveStatus.textContent = "Downloaded";
+      downloadJSON(JSON.stringify(layers[activeLayer].toSavePayload()), activeLayer + ".json");
+      els.saveStatus.textContent = "Downloaded " + activeLayer + ".json";
     });
     document.querySelectorAll(".undoBtnCls").forEach(function (b) { b.addEventListener("click", undo); });
     document.querySelectorAll(".redoBtnCls").forEach(function (b) { b.addEventListener("click", redo); });
@@ -964,7 +1149,7 @@
     els.kindSelect.addEventListener("change", function () { fireFieldHistory(); applyLabelField(); refreshLabelSummaryOnly(); });
 
     window.addEventListener("beforeunload", function (e) {
-      if (modified) { e.preventDefault(); e.returnValue = ""; }
+      if (anyModified()) { e.preventDefault(); e.returnValue = ""; }
     });
     window.addEventListener("resize", function () { markDirty(); });
 
@@ -998,6 +1183,7 @@
         case "deleteVertex": doDeleteVertexDown(wx, wy); break;
         case "moveFeature": doMoveFeatureDown(sx, sy, wx, wy); break;
         case "deleteFeature": doDeleteFeatureDown(wx, wy); break;
+        case "pen": penStroke = [wx, wy]; marks.push(penStroke); markDirty(); break;
       }
     });
     els.floatHeader.addEventListener("mousedown", function (e) {
@@ -1022,6 +1208,12 @@
         els.floatPanel.style.left = nx + "px"; els.floatPanel.style.top = ny + "px";
         return;
       }
+      if (penStroke) {
+        var pr = mapWrap.getBoundingClientRect();
+        penStroke.push((e.clientX - pr.left - view.panX) / view.scale, (e.clientY - pr.top - view.panY) / view.scale);
+        markDirty();
+        return;
+      }
       var rect = mapWrap.getBoundingClientRect();
       var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
       var wx = (sx - view.panX) / view.scale, wy = (sy - view.panY) / view.scale;
@@ -1037,6 +1229,7 @@
       updateStatus();
     });
     window.addEventListener("mouseup", function () {
+      penStroke = null;
       if (floatDrag) { floatDrag = null; return; }
       if (panDrag) {
         panDrag = null;
@@ -1080,7 +1273,51 @@
       finishDraft();
     });
 
+    function clearMarks() { marks = []; penStroke = null; markDirty(); }
+    function copyView() {
+      var cx = (mapWrap.clientWidth / 2 - view.panX) / view.scale, cy = (mapWrap.clientHeight / 2 - view.panY) / view.scale;
+      var lon = 84.52 + 1.08 * cx / 36169, lat = 28.45 - 0.75 * cy / 28011;
+      var txt = lat.toFixed(5) + ", " + lon.toFixed(5) + "  zoom " + view.scale.toFixed(2) +
+                "  index.html#m=swipe&z=" + view.scale.toFixed(3) + "&c=" + lat.toFixed(5) + "," + lon.toFixed(5);
+      var done = function () { els.saveStatus.textContent = "Copied: " + txt; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done); else done();
+    }
+    ["clearMarksBtn", "clearMarksBtn2"].forEach(function (id) { var b = document.getElementById(id); if (b) b.addEventListener("click", clearMarks); });
+    // pen strokes -> one closed polygon on the active layer: chain strokes end-to-end by nearest
+    // endpoint (reversing when needed), thin out near-duplicate points, close the ring
+    function marksToPolygon() {
+      var strokes = marks.filter(function (m) { return m.length >= 4; }).map(function (m) { return m.slice(); });
+      if (!strokes.length) { els.saveStatus.textContent = "No pen marks to convert"; return; }
+      strokes.sort(function (a, b) { return b.length - a.length; });
+      var chain = strokes.shift();
+      while (strokes.length) {
+        var ex = chain[chain.length - 2], ey = chain[chain.length - 1], best = -1, bestD = Infinity, rev = false;
+        strokes.forEach(function (st, i) {
+          var d0 = Math.hypot(st[0] - ex, st[1] - ey), d1 = Math.hypot(st[st.length - 2] - ex, st[st.length - 1] - ey);
+          if (d0 < bestD) { bestD = d0; best = i; rev = false; }
+          if (d1 < bestD) { bestD = d1; best = i; rev = true; }
+        });
+        var nxt = strokes.splice(best, 1)[0];
+        if (rev) { var r = []; for (var i = nxt.length - 2; i >= 0; i -= 2) r.push(nxt[i], nxt[i + 1]); nxt = r; }
+        chain = chain.concat(nxt);
+      }
+      var pts = [chain[0], chain[1]];
+      for (var k = 2; k < chain.length; k += 2) {
+        if (Math.hypot(chain[k] - pts[pts.length - 2], chain[k + 1] - pts[pts.length - 1]) >= 1.5) pts.push(chain[k], chain[k + 1]);
+      }
+      if (pts.length >= 4 && Math.hypot(pts[0] - pts[pts.length - 2], pts[1] - pts[pts.length - 1]) < 1.5) pts.length -= 2;
+      if (pts.length < 6) { els.saveStatus.textContent = "Marks too short for a polygon"; return; }
+      pushHistory();
+      data.polys.push(pts);
+      selection = { type: "poly", index: data.polys.length - 1, vertex: null };
+      marks = []; penStroke = null;
+      setTool("select"); refreshSelectionFields(); markDirty();
+      els.saveStatus.textContent = "Marks converted to a " + (pts.length / 2) + "-point polygon on " + activeLayer + " (unsaved)";
+    }
+    ["marksToPolyBtn", "marksToPolyBtn2"].forEach(function (id) { var b = document.getElementById(id); if (b) b.addEventListener("click", marksToPolygon); });
+    ["copyViewBtn", "copyViewBtn2"].forEach(function (id) { var b = document.getElementById(id); if (b) b.addEventListener("click", copyView); });
     window.addEventListener("keydown", function (e) {
+      if ((e.key === "m" || e.key === "M") && !e.metaKey && !e.ctrlKey && document.activeElement.tagName !== "INPUT") { setTool("pen"); return; }
       var tag = (e.target && e.target.tagName) || "";
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -1135,12 +1372,15 @@
     getState: function () {
       return {
         tool: tool,
+        layer: activeLayer,
         selection: selection ? { type: selection.type, index: selection.index, vertex: selection.vertex } : null,
         scale: view.scale, panX: view.panX, panY: view.panY,
-        modified: modified,
-        undoDepth: undoStack.length, redoDepth: redoStack.length
+        modified: anyModified(),
+        undoDepth: layers[activeLayer].undoStack.length, redoDepth: layers[activeLayer].redoStack.length
       };
-    }
+    },
+    getLayer: function () { return activeLayer; },
+    setLayer: function (name) { setLayer(name); }
   };
 
   // ============================== init ==============================
@@ -1149,7 +1389,10 @@
     mapWrap = els.mapWrap; bgCanvas = els.bgCanvas; fgCanvas = els.fgCanvas;
     bindEvents();
     fitView();
-    loadRivers();
+    updateLayerUI();
+    updateDrawToolAvailability();
+    loadLayer("rivers");
+    loadLayer("flood"); // loaded even though inactive, so it renders dimmed straight away
     setTool("select");
     updateStatus();
     scheduleRender();

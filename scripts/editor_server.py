@@ -4,14 +4,16 @@
     python3 scripts/editor_server.py          # then open http://127.0.0.1:8790/editor.html
 
 POST /save/rivers   body = rivers.json content  -> writes assets/trisuli/rivers.json
-                                                  (previous file kept as assets/trisuli/rivers.backup.json)
+POST /save/flood    body = flood.json content   -> writes assets/trisuli/flood.json
+                                                  (previous file kept as <name>.backup.json)
 GET  anything else  -> static file from the project root (no caching, so edits show on reload)
 """
 import http.server, json, os, shutil, sys
 from functools import partial
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TARGETS = {"/save/rivers": os.path.join(ROOT, "assets", "trisuli", "rivers.json")}
+TARGETS = {"/save/rivers": (os.path.join(ROOT, "assets", "trisuli", "rivers.json"), ("polys", "lines", "labels")),
+           "/save/flood":  (os.path.join(ROOT, "assets", "trisuli", "flood.json"), ("path",))}
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"                  # one request per connection keeps error replies simple
@@ -22,12 +24,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(n)                      # always drain the body before answering
-        target = TARGETS.get(self.path)
-        if not target:
+        spec = TARGETS.get(self.path)
+        if not spec:
             self.send_error(404, "unknown save target"); return
+        target, required = spec
         try:
             data = json.loads(body)
-            for k in ("polys", "lines", "labels"):
+            for k in required:
                 if not isinstance(data.get(k), list): raise ValueError("missing list: " + k)
         except Exception as e:
             self.send_error(400, "bad json: %s" % e); return
@@ -35,7 +38,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             shutil.copyfile(target, target.replace(".json", ".backup.json"))
         with open(target, "w") as f:
             json.dump(data, f, separators=(",", ":"))
-        out = json.dumps({"ok": True, "bytes": os.path.getsize(target), "polys": len(data["polys"]), "lines": len(data["lines"]), "labels": len(data["labels"])}).encode()
+        out = json.dumps({"ok": True, "bytes": os.path.getsize(target), "counts": {k: len(data[k]) for k in required}}).encode()
         self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(out))); self.end_headers()
         self.wfile.write(out)
         print("saved", target, len(body), "bytes", flush=True)

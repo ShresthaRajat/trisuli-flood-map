@@ -806,8 +806,11 @@ def main():
         buildings.append(b)
         building_class_hist[cls] = building_class_hist.get(cls, 0) + 1
 
-    # Lines
+    # Lines. Canals/drains/ditches are left out: the Rivers overlay (rivers.json) already
+    # carries OSM waterway centrelines, so drawing them here would duplicate it.
     for pl, tags, cls in raw_lines:
+        if cls == "canal":
+            continue
         bb = bbox_of_ring(pl) if len(pl) >= 4 else (min(pl[0::2]), min(pl[1::2]), max(pl[0::2]), max(pl[1::2]))
         if not bbox_intersects(bb, FOCUS_BBOX):
             continue
@@ -878,6 +881,11 @@ def main():
     }
 
     out_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "assets", "trisuli", "osm.json"))
+    # key-location markers go in their own small file so the Labels toggle can load
+    # them without pulling the ~0.8 MB building set
+    pois_path = os.path.join(os.path.dirname(out_path), "pois.json")
+    with open(pois_path, "w", encoding="utf-8") as f:
+        json.dump({"meta": meta, "pois": out.pop("pois")}, f, separators=(",", ":"), ensure_ascii=False)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, separators=(",", ":"), ensure_ascii=False)
 

@@ -56,7 +56,7 @@
   .layer { position: absolute; inset: 0; overflow: hidden; }
   .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
   .world { background: #05080B; }
-  #contourCanvas, #riverCanvas, #roadCanvas, #placesCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
+  #contourCanvas, #riverCanvas, #roadCanvas, #placesCanvas, #floodCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
   #focusCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
   .world img { display: block; position: absolute; image-rendering: auto; pointer-events: none; -webkit-user-drag: none; }
   .tiles { position: absolute; left: 0; top: 0; }
@@ -229,12 +229,12 @@
       <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
       <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
       <span><i class="dot d-city"></i>Major town / city (reference)</span>
-      <span class="legend-sub">Places overlay (OpenStreetMap)</span>
+      <span class="legend-sub">Key locations (Labels) · Structures (OpenStreetMap)</span>
       <span><i class="dot d-school"></i>School</span>
       <span><i class="dot d-health"></i>Health</span>
       <span><i class="dot d-worship"></i>Temple / worship</span>
       <span><i class="dot d-civic"></i>Civic / police</span>
-    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (rendered here from the 16-bit surface-reflectance product with a percentile stretch, north-up at ~2.9 m) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 28 Aug · Trisuli Bazar option is a Vantor (formerly Maxar) WorldView-2 scene (~10:52 NPT, 0.54 m GSD) covering the whole focus box under broken cloud, and the pre side carries a Vantor Legion scene from 5 Feb 2026 (~14:02 NPT, 0.39 m GSD, cloud-free) over the western three quarters of the box on top of the PlanetScope image; both come from <a href="https://openaerialmap.org">OpenAerialMap</a> (© 2026 Vantor via OpenAerialMap, CC-BY 4.0), were registered to the PlanetScope frame like the SkySat, and stream as tiles at ~0.37–0.49 m. As of 5 Sep these two are the only post-flood sub-metre collects released openly over this reach: every other open scene of the event — Vantor WorldView-3 and Legion (27 Aug – 5 Sep), Planet SkySat and Pelican (27 Aug, 1 Sep) — sits upstream of Betrawati, and the 1 Sep Sentinel-2 pass is solid cloud here; those upstream scenes are on the <a href="full-map.html">corridor map</a>. The one cloud-free post-flood view is radar: the Sentinel-1 option is the 28 Aug ~18:06 NPT Sentinel-1D pass (© ESA Copernicus, radiometrically terrain-corrected gamma0 from the Microsoft Planetary Computer, 10 m, rendered here from VV and VH backscatter in decibels with a light speckle filter), paired on the pre side with the 16 Aug pass from the same ascending orbit so the two are directly comparable. Radar reads differently from a photograph: smooth surfaces such as water and fresh wet sediment return little signal and appear dark, rough vegetation and buildings appear bright, and steep slopes facing away from the satellite fall into shadow — so the widened, sediment-filled channel shows as a dark band that was not there on 16 Aug. The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The Landmarks, Rivers and Places overlays all draw on OpenStreetMap data (© OpenStreetMap contributors, ODbL). The Landmarks overlay shows every OpenStreetMap way in the box: highways in amber, minor roads in grey, tracks and footpaths dashed, plus road bridges and footbridges (alignments are pre-flood). Bridges are drawn the OpenStreetMap way, as the road continuing across the span with a thin black casing. The Rivers overlay is OpenStreetMap's pre-flood water: river and reservoir areas filled and outlined in cyan, with river, canal and stream centrelines and their OSM names; alignments are pre-flood and are best checked against the 5 Feb 2026 Legion image. This page carries no flood-extent overlay. The Places overlay draws OpenStreetMap buildings, grounds and perimeters (schools, health facilities, temples, government buildings), power lines and other infrastructure, and place labels, all from pre-flood mapping. Footprints are hand-traced in OSM and only approximate individual roofs; they have been nudged ~3 m north-west so that most sit on the roofs in the 5 Feb 2026 Legion image (off-nadir roof positions differ slightly in the 28 Aug WorldView-2 scene). OSM coverage in the valley is incomplete, so the absence of a building on the map does not mean its absence on the ground. Coordinates shown are approximate.</p>
+    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (rendered here from the 16-bit surface-reflectance product with a percentile stretch, north-up at ~2.9 m) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 28 Aug · Trisuli Bazar option is a Vantor (formerly Maxar) WorldView-2 scene (~10:52 NPT, 0.54 m GSD) covering the whole focus box under broken cloud, and the pre side carries a Vantor Legion scene from 5 Feb 2026 (~14:02 NPT, 0.39 m GSD, cloud-free) over the western three quarters of the box on top of the PlanetScope image; both come from <a href="https://openaerialmap.org">OpenAerialMap</a> (© 2026 Vantor via OpenAerialMap, CC-BY 4.0), were registered to the PlanetScope frame like the SkySat, and stream as tiles at ~0.37–0.49 m. As of 5 Sep these two are the only post-flood sub-metre collects released openly over this reach: every other open scene of the event — Vantor WorldView-3 and Legion (27 Aug – 5 Sep), Planet SkySat and Pelican (27 Aug, 1 Sep) — sits upstream of Betrawati, and the 1 Sep Sentinel-2 pass is solid cloud here; those upstream scenes are on the <a href="full-map.html">corridor map</a>. The one cloud-free post-flood view is radar: the Sentinel-1 option is the 28 Aug ~18:06 NPT Sentinel-1D pass (© ESA Copernicus, radiometrically terrain-corrected gamma0 from the Microsoft Planetary Computer, 10 m, rendered here from VV and VH backscatter in decibels with a light speckle filter), paired on the pre side with the 16 Aug pass from the same ascending orbit so the two are directly comparable. Radar reads differently from a photograph: smooth surfaces such as water and fresh wet sediment return little signal and appear dark, rough vegetation and buildings appear bright, and steep slopes facing away from the satellite fall into shadow — so the widened, sediment-filled channel shows as a dark band that was not there on 16 Aug. The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The Roads, Rivers and Structures overlays and the key-location markers all draw on OpenStreetMap data (© OpenStreetMap contributors, ODbL). The Roads overlay shows every OpenStreetMap way in the box: highways in amber, minor roads in grey, tracks and footpaths dashed, plus road bridges and footbridges (alignments are pre-flood). Bridges are drawn the OpenStreetMap way, as the road continuing across the span with a thin black casing. Road sections and bridges drawn red lie inside the mapped Flood extent (within ~4 m of it), so they are presumed flood-damaged on that exposure basis alone, not field-verified. The Rivers overlay is OpenStreetMap's pre-flood water: river and reservoir areas filled and outlined in cyan, with river, canal and stream centrelines and their OSM names; alignments are pre-flood and are best checked against the 5 Feb 2026 Legion image. The Flood overlay (red) is the post-flood channel: fresh sediment and turbid water connected to the pre-flood river and within ~16 m of its level (Copernicus GLO-30 DEM), classified at ~2.9 m from the 28 Aug WorldView-2 scene, the 31 Aug SkySat where WorldView-2 is hazy and the 27 Aug Sentinel-2 where both are clouded; the outline is smoothed and not field-verified. The Structures overlay draws OpenStreetMap buildings, grounds and perimeters (schools, health facilities, temples, government buildings), power lines and other infrastructure, all from pre-flood mapping; key locations (schools, hospitals, government offices, police, bus stations, the hydropower station, the temple and Nuwakot Durbar) are drawn as markers together with the Labels toggle. Footprints are hand-traced in OSM and only approximate individual roofs; they have been nudged ~3 m north-west so that most sit on the roofs in the 5 Feb 2026 Legion image (off-nadir roof positions differ slightly in the 28 Aug WorldView-2 scene). OSM coverage in the valley is incomplete, so the absence of a building on the map does not mean its absence on the ground. Coordinates shown are approximate.</p>
   </details>
   <p id="lastUpdated" class="muted"></p>
 </aside>
@@ -257,6 +257,7 @@
   </div></div>
   <canvas id="contourCanvas" aria-hidden="true"></canvas>
   <canvas id="riverCanvas" aria-hidden="true"></canvas>
+  <canvas id="floodCanvas" aria-hidden="true"></canvas>
   <canvas id="roadCanvas" aria-hidden="true"></canvas>
   <canvas id="placesCanvas" aria-hidden="true"></canvas>
   <canvas id="focusCanvas" aria-hidden="true"></canvas>
@@ -298,9 +299,10 @@
   <button id="zoomOut" aria-label="Zoom out">－</button>
   <button id="markToggle" aria-pressed="true">Labels</button>
   <button id="contourToggle" aria-pressed="false">Contours</button>
-  <button id="landmarkToggle" aria-pressed="false">Landmarks</button>
-  <button id="placesToggle" aria-pressed="false">Places</button>
+  <button id="landmarkToggle" aria-pressed="false">Roads</button>
+  <button id="placesToggle" aria-pressed="false">Structures</button>
   <button id="riverToggle" aria-pressed="false">Rivers</button>
+  <button id="floodToggle" aria-pressed="false">Flood</button>
 </div>
 
 <script>
@@ -680,7 +682,7 @@
   function ensureRivers() {
     if (riverData || riverLoading) return;
     riverLoading = true;
-    fetch("assets/trisuli/rivers.json?v=" + TILE_VER)
+    fetch("assets/trisuli/rivers.json?t=" + Date.now())   // editable file: never serve a stale cached copy
       .then(function (r) { return r.json(); })
       .then(function (j) {
         var wrap = function (arr) { return (arr || []).map(function (e) { var L = e.p ? { p: e.p, c: e.c } : { p: e }; computeBB(L); return L; }); };
@@ -764,11 +766,59 @@
     }
   }
 
-  var floodOn = false;   // flood overlay removed from this page; kept for the shared URL-hash format
+  // --- flood path overlay (red): post-flood channel classified from the 28 Aug WorldView-2,
+  // 31 Aug SkySat and 27 Aug Sentinel-2 scenes, seeded by the pre-flood river polygons ---
+  var floodCanvas = document.getElementById("floodCanvas");
+  var fctx = floodCanvas.getContext("2d");
+  var floodOn = false, floodData = null, floodLoading = false;
+  function ensureFlood() {
+    if (floodData || floodLoading) return;
+    floodLoading = true;
+    fetch("assets/trisuli/flood.json?t=" + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        floodData = (j.path || []).map(function (p) { var L = { p: p }; computeBB(L); return L; });
+        drawFlood();
+      });
+  }
+  var floodRaf = 0;
+  function drawFlood() {
+    if (!floodOn || floodRaf) return;
+    floodRaf = requestAnimationFrame(function () { floodRaf = 0; renderFlood(); });
+  }
+  function renderFlood() {
+    ensureFlood();
+    var dpr = window.devicePixelRatio || 1;
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (floodCanvas.width !== Math.round(w * dpr) || floodCanvas.height !== Math.round(h * dpr)) {
+      floodCanvas.width = Math.round(w * dpr); floodCanvas.height = Math.round(h * dpr);
+      floodCanvas.style.width = w + "px"; floodCanvas.style.height = h + "px";
+    }
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fctx.clearRect(0, 0, w, h);
+    if (!floodData) return;
+    var wx0 = -panX / scale, wy0 = -panY / scale, wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
+    fctx.lineJoin = "round";
+    fctx.beginPath();
+    floodData.forEach(function (L) {
+      var bb = L.bb;
+      if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
+      var p = L.p;
+      fctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+      for (var i = 2; i < p.length; i += 2) fctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+      fctx.closePath();
+    });
+    fctx.fillStyle = "rgba(255,50,40,0.28)";
+    fctx.fill("evenodd");
+    fctx.lineWidth = 1.6;
+    fctx.strokeStyle = "rgba(255,64,56,0.95)";
+    fctx.stroke();
+  }
   // --- roads & bridges overlay (© OpenStreetMap contributors) ---
   var roadCanvas = document.getElementById("roadCanvas");
   var rctx = roadCanvas.getContext("2d");
   var roadsOn = false, roadData = null, roadLoading = false;
+  var DAMAGE_RED = "#E0352B";   // roads/bridges inside the mapped flood extent
   var ROAD_STYLES = {
     t: { zmin: 0,    fill: "#FFC24D", w: 2.6 },
     p: { zmin: 0,    fill: "#FFD98A", w: 2.0 },
@@ -839,6 +889,27 @@
     strokeSet(roadData.roads, ROAD_STYLES, "casing");
     strokeSet(roadData.roads, ROAD_STYLES, "fill");
     rctx.setLineDash([]);
+    // road sections inside the mapped flood extent (roads.json "damaged", built by
+    // scripts/flag_flood_roads.py from flood.json) drawn red over the fill
+    Object.keys(ROAD_STYLES).forEach(function (k) {
+      var st = ROAD_STYLES[k];
+      var t = Math.min(1, Math.max(0, (z - st.zmin) / 0.7));
+      if (t <= 0) return;
+      rctx.lineWidth = st.w + 0.3;
+      rctx.globalAlpha = t;
+      rctx.strokeStyle = DAMAGE_RED;
+      rctx.beginPath();
+      (roadData.damaged || []).forEach(function (L) {
+        if (L.c !== k) return;
+        var bb = L.bb;
+        if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
+        var p = L.p;
+        rctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+        for (var i = 2; i < p.length; i += 2) rctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+      });
+      rctx.stroke();
+    });
+    rctx.globalAlpha = 1;
     // bridges (OpenStreetMap style): the road is redrawn along the span with a thin black
     // casing on both sides and square ends, in the road's own colour and width
     rctx.lineCap = "butt";
@@ -852,7 +923,7 @@
         var w1 = Math.max(rs.w, 2.2) * (z >= 14 ? 1.6 : 1.2);
         rctx.lineWidth = pass === "casing" ? w1 + 2.4 : w1;
         rctx.globalAlpha = t;
-        rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : rs.fill;
+        rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : (L.d ? DAMAGE_RED : rs.fill);   // d = span inside the flood extent
         rctx.setLineDash([]);
         rctx.beginPath();
         var p = L.p;
@@ -890,6 +961,7 @@
   var placesCanvas = document.getElementById("placesCanvas");
   var pctx = placesCanvas.getContext("2d");
   var placesOn = false, placesData = null, placesLoading = false;
+  var poiData = null, poiLoading = false;   // key-location markers, shown with the Labels toggle
   var AREA_STYLES = {
     school:     { fill: "rgba(110,168,255,0.16)", stroke: "#6EA8FF" },
     health:     { fill: "rgba(255,125,176,0.16)", stroke: "#FF7DB0" },
@@ -958,18 +1030,29 @@
         j.buildings.forEach(computeBB);
         j.areas.forEach(computeBB);
         j.lines.forEach(computeBB);
-        j.pois.sort(function (a, b) { return poiPriority(a.c) - poiPriority(b.c); });
         placesData = j;
+        drawPlaces();
+      });
+  }
+  function ensurePois() {
+    if (poiData || poiLoading) return;
+    poiLoading = true;
+    fetch("assets/trisuli/pois.json?v=" + TILE_VER)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        j.pois.sort(function (a, b) { return poiPriority(a.c) - poiPriority(b.c); });
+        poiData = j.pois;
         drawPlaces();
       });
   }
   var placesRaf = 0;
   function drawPlaces() {
-    if (!placesOn || placesRaf) return;
+    if ((!placesOn && !showMarks) || placesRaf) return;
     placesRaf = requestAnimationFrame(function () { placesRaf = 0; renderPlaces(); });
   }
   function renderPlaces() {
-    ensurePlaces();
+    if (placesOn) ensurePlaces();
+    if (showMarks) ensurePois();
     var dpr = window.devicePixelRatio || 1;
     var w = stage.clientWidth, h = stage.clientHeight;
     if (placesCanvas.width !== Math.round(w * dpr) || placesCanvas.height !== Math.round(h * dpr)) {
@@ -978,7 +1061,10 @@
     }
     pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     pctx.clearRect(0, 0, w, h);
-    if (!placesData) return;
+    // structures (buildings/areas/lines) follow the Structures toggle; key-location
+    // markers follow the Labels toggle, so either may be drawn without the other
+    var S = (placesOn && placesData) ? placesData : { areas: [], lines: [], buildings: [] };
+    var pois = (showMarks && poiData) ? poiData : [];
     var z = zoomLevel();
     var wx0 = -panX / scale, wy0 = -panY / scale;
     var wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
@@ -997,7 +1083,7 @@
     var tArea = Math.min(1, Math.max(0, (z - 12.5) / 0.7));
     if (tArea > 0) {
       var areaGroups = {};
-      placesData.areas.forEach(function (L) {
+      S.areas.forEach(function (L) {
         if (!visible(L)) return;
         (areaGroups[L.c] || (areaGroups[L.c] = [])).push(L);
       });
@@ -1022,7 +1108,7 @@
     var tLine = Math.min(1, Math.max(0, (z - 13) / 0.7));
     if (tLine > 0) {
       var lineGroups = {};
-      placesData.lines.forEach(function (L) {
+      S.lines.forEach(function (L) {
         if (!visible(L)) return;
         (lineGroups[L.c] || (lineGroups[L.c] = [])).push(L);
       });
@@ -1052,7 +1138,7 @@
     var tBldg = Math.min(1, Math.max(0, (z - 14) / 0.7));
     if (tBldg > 0) {
       var fillGroups = {}, exposedByClass = {};
-      placesData.buildings.forEach(function (L) {
+      S.buildings.forEach(function (L) {
         if (!visible(L)) return;
         var key = L.f ? ("exp" + L.f) : (L.c || "other");
         (fillGroups[key] || (fillGroups[key] = [])).push(L);
@@ -1092,7 +1178,7 @@
     }
 
     // points of interest, with simple label-collision avoidance
-    if (placesData.pois.length) {
+    if (pois.length) {
       var placed = [];
       var labelFits = function (x0, y0, x1, y1) {
         for (var i = 0; i < placed.length; i++) {
@@ -1102,7 +1188,7 @@
         return true;
       };
       var dotR = z >= 15 ? 7 : 5;
-      placesData.pois.forEach(function (P) {
+      pois.forEach(function (P) {
         var early = POI_EARLY[P.c];
         // banks are the single largest POI class (37 of 96) and clutter the town at
         // mid zoom, so they get their own later reveal than the rest of the "late" set
@@ -1222,6 +1308,7 @@
     });
     drawContours();
     drawRivers();
+    drawFlood();
     drawRoads();
     drawPlaces();
     tilesSky31.update();
@@ -1332,7 +1419,13 @@
     this.setAttribute("aria-pressed", String(contoursOn));
     apply();
   };
-  // Landmarks = roads (with bridges) + rivers together
+  // Roads (with bridges)
+  document.getElementById("floodToggle").onclick = function () {
+    floodOn = !floodOn;
+    floodCanvas.style.display = floodOn ? "block" : "none";
+    this.setAttribute("aria-pressed", String(floodOn));
+    apply();
+  };
   document.getElementById("riverToggle").onclick = function () {
     riversOn = !riversOn;
     riverCanvas.style.display = riversOn ? "block" : "none";
@@ -1348,12 +1441,14 @@
   };
   document.getElementById("placesToggle").onclick = function () {
     placesOn = !placesOn;
-    placesCanvas.style.display = placesOn ? "block" : "none";
+    placesCanvas.style.display = (placesOn || showMarks) ? "block" : "none";
     this.setAttribute("aria-pressed", String(placesOn));
     apply();
   };
+  placesCanvas.style.display = (placesOn || showMarks) ? "block" : "none";
   document.getElementById("markToggle").onclick = function () {
     showMarks = !showMarks;
+    placesCanvas.style.display = (placesOn || showMarks) ? "block" : "none";
     this.setAttribute("aria-pressed", String(showMarks));
     apply();
   };
@@ -1428,9 +1523,9 @@
   }
   panelToggle.onclick = function () { setPanelOpen(panel.classList.contains("collapsed")); };
 
-  // Desktop starts with the panel open, mobile (<=640px) collapsed; decided before fit()
+  // The info panel starts collapsed on every screen size; decided before fit()
   // so the stage is measured at its final width on first render.
-  var panelOpenInitially = !window.matchMedia("(max-width: 640px)").matches;
+  var panelOpenInitially = false;   // info panel starts collapsed on every screen size (user request)
   panel.classList.toggle("collapsed", !panelOpenInitially);
   panelToggle.setAttribute("aria-expanded", String(panelOpenInitially));
   panelToggle.textContent = panelOpenInitially ? "◂" : "▸ Info";

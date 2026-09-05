@@ -565,8 +565,10 @@ def patch(riv, res, can, report):
 
     # canal centrelines superseded by the traced one
     ref = flat(can["line"], 2)
+    # (named lines are hand-placed, e.g. the "aqueduct" carrying the Pasang Murrfu canal
+    # across the Trishuli to the tunnel portal, and are always kept)
     drop_l = [i for i, L in enumerate(lines)
-              if L["c"] == "c" and poly_dist_frac(L["p"], ref, 12.0) >= 0.5]
+              if L["c"] == "c" and not L.get("n") and poly_dist_frac(L["p"], ref, 12.0) >= 0.5]
     riv["lines"] = [L for i, L in enumerate(lines) if i not in drop_l]
     riv["lines"].append({"c": "c", "p": flat(can["line"], 1)})
 
