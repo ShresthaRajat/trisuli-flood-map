@@ -56,16 +56,24 @@
   .layer { position: absolute; inset: 0; overflow: hidden; }
   .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
   .world { background: #05080B; }
-  #contourCanvas, #riverCanvas, #floodCanvas, #roadCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
+  #contourCanvas, #riverCanvas, #roadCanvas, #placesCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
   #focusCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
   .world img { display: block; position: absolute; image-rendering: auto; pointer-events: none; -webkit-user-drag: none; }
   .tiles { position: absolute; left: 0; top: 0; }
   .tiles img { position: absolute; }
+  /* the two corner tags are <select>s: they pick the imagery for that side and hold the
+     "Pre only" / "Post only" view options; a white outline marks the side shown alone */
   .tag {
-    position: absolute; top: 10px; padding: 2px 10px; border-radius: 4px;
-    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
-    background: rgba(12,17,22,0.75); pointer-events: none; z-index: 4;
+    position: absolute; top: 10px; padding: 2px 24px 2px 10px; border-radius: 4px; z-index: 6;
+    font: inherit; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    background: rgba(12,17,22,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238FA0AB' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;
+    border: 1px solid transparent; cursor: pointer; appearance: none; -webkit-appearance: none; max-width: 46vw;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
   }
+  .tag:hover { border-color: var(--accent); }
+  .tag:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tag.only { border-color: #E6ECF0; box-shadow: 0 0 0 1px rgba(230,236,240,0.35); }
+  .tag option, .tag optgroup { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink); background: var(--panel); }
   #tagPre { left: 10px; color: #9FD5A9; }
   #tagPost { right: 10px; color: var(--warn); }
   #handle {
@@ -108,6 +116,11 @@
   #legend .d-high { background: #FF5A4E; }
   #legend .d-mid { background: #FFA02E; }
   #legend .d-city { background: #4ADE80; }
+  #legend .legend-sub { margin-top: 4px; opacity: 0.85; }
+  #legend .d-school { background: #6EA8FF; }
+  #legend .d-health { background: #FF7DB0; }
+  #legend .d-worship { background: #FFB347; }
+  #legend .d-civic { background: #C8B5FF; }
   #scalebar {
     position: absolute; right: 10px; bottom: 10px; z-index: 4; pointer-events: none;
     text-align: right; font-size: 0.72rem; font-weight: 600; color: var(--ink);
@@ -122,18 +135,14 @@
     padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
     background: var(--panel); border-top: 1px solid var(--line);
   }
-  button, .seg button, #postSrc {
+  button {
     background: #1D2831; color: var(--ink); border: 1px solid var(--line);
     border-radius: 6px; padding: 0.3rem 0.7rem; font: inherit; font-size: 0.85rem; cursor: pointer;
   }
   button:hover, #postSrc:hover { border-color: var(--accent); }
   button:focus-visible, #postSrc:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .seg { display: inline-flex; border-radius: 6px; overflow: hidden; }
-  .seg button { border-radius: 0; border-right-width: 0; }
-  .seg button:first-child { border-radius: 6px 0 0 6px; }
-  .seg button:last-child { border-radius: 0 6px 6px 0; border-right-width: 1px; }
-  .seg button.on { background: var(--accent); color: #08222A; border-color: var(--accent); font-weight: 600; }
-  #postSrcLabel { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); }
+  /* an enabled toggle is shown white */
+  #controls button[aria-pressed="true"] { background: #E6ECF0; color: #0C1116; border-color: #E6ECF0; font-weight: 600; }
   #coords {
     position: absolute; left: 10px; bottom: 10px; z-index: 4; pointer-events: none;
     font-family: ui-monospace, monospace; font-size: 0.72rem; font-weight: 600; color: var(--ink);
@@ -189,8 +198,7 @@
     body { font-size: 14px; }
     #tagPost { top: 38px; }   /* stack the two tags on narrow screens instead of overlapping */
     #controls { gap: 0.35rem; padding-left: 0.6rem; padding-right: 0.6rem; }
-    button, .seg button, #srcNotes summary, #postSrc { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
-    #postSrcLabel { font-size: 0.76rem; }
+    button, #srcNotes summary { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
     #coords { display: none; }
     #panel {
       position: absolute; left: 0; top: 0; bottom: 0; width: min(85vw, 340px);
@@ -221,7 +229,12 @@
       <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
       <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
       <span><i class="dot d-city"></i>Major town / city (reference)</span>
-    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (rendered here from the 16-bit surface-reflectance product with a percentile stretch, north-up at ~2.9 m) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 28 Aug · Trisuli Bazar option is a Vantor (formerly Maxar) WorldView-2 scene (~08:52 NPT, 0.54 m GSD) covering the whole focus box under broken cloud, and the pre side carries a Vantor Legion scene from 5 Feb 2026 (~13:02 NPT, 0.39 m GSD, cloud-free) over the western three quarters of the box on top of the PlanetScope image; both come from <a href="https://openaerialmap.org">OpenAerialMap</a> (© 2026 Vantor via OpenAerialMap, CC-BY 4.0), were registered to the PlanetScope frame like the SkySat, and stream as tiles at ~0.37–0.49 m. The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber), tertiary branch roads at closer zoom, and bridge symbols (][ = road bridges, )( = suspension footbridges) from © OpenStreetMap contributors — alignments are pre-flood. Bridges drawn red cross the Lhende–Bhote Koshi–Trishuli flood stem upstream of Galchhi and are presumed destroyed or damaged (exposure-based, not field-verified); amber bridges are outside the flood path, and road sections drawn red (within ~175 m of the flood stem) are presumed flood-damaged on the same exposure basis. The rivers overlay (also OSM) washes rivers in cyan, with the Lhende–Bhote Koshi–Trishuli flood stem highlighted red. The separate flood overlay outlines the flood extent — the widened debris channel traced from the post-event imagery (27 Aug Sentinel-2, with the 28 Aug PlanetScope mosaic filling cloud), classified within ~500 m of the river and generalised to ~30 m; it is approximate, breaks where all post-event scenes are clouded, and is thin and patchy in the hazy uppermost Lhende valley. Coordinates shown are approximate.</p>
+      <span class="legend-sub">Places overlay (OpenStreetMap)</span>
+      <span><i class="dot d-school"></i>School</span>
+      <span><i class="dot d-health"></i>Health</span>
+      <span><i class="dot d-worship"></i>Temple / worship</span>
+      <span><i class="dot d-civic"></i>Civic / police</span>
+    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (rendered here from the 16-bit surface-reflectance product with a percentile stretch, north-up at ~2.9 m) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 28 Aug · Trisuli Bazar option is a Vantor (formerly Maxar) WorldView-2 scene (~10:52 NPT, 0.54 m GSD) covering the whole focus box under broken cloud, and the pre side carries a Vantor Legion scene from 5 Feb 2026 (~14:02 NPT, 0.39 m GSD, cloud-free) over the western three quarters of the box on top of the PlanetScope image; both come from <a href="https://openaerialmap.org">OpenAerialMap</a> (© 2026 Vantor via OpenAerialMap, CC-BY 4.0), were registered to the PlanetScope frame like the SkySat, and stream as tiles at ~0.37–0.49 m. As of 5 Sep these two are the only post-flood sub-metre collects released openly over this reach: every other open scene of the event — Vantor WorldView-3 and Legion (27 Aug – 5 Sep), Planet SkySat and Pelican (27 Aug, 1 Sep) — sits upstream of Betrawati, and the 1 Sep Sentinel-2 pass is solid cloud here; those upstream scenes are on the <a href="full-map.html">corridor map</a>. The one cloud-free post-flood view is radar: the Sentinel-1 option is the 28 Aug ~18:06 NPT Sentinel-1D pass (© ESA Copernicus, radiometrically terrain-corrected gamma0 from the Microsoft Planetary Computer, 10 m, rendered here from VV and VH backscatter in decibels with a light speckle filter), paired on the pre side with the 16 Aug pass from the same ascending orbit so the two are directly comparable. Radar reads differently from a photograph: smooth surfaces such as water and fresh wet sediment return little signal and appear dark, rough vegetation and buildings appear bright, and steep slopes facing away from the satellite fall into shadow — so the widened, sediment-filled channel shows as a dark band that was not there on 16 Aug. The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The Landmarks, Rivers and Places overlays all draw on OpenStreetMap data (© OpenStreetMap contributors, ODbL). The Landmarks overlay shows every OpenStreetMap way in the box: highways in amber, minor roads in grey, tracks and footpaths dashed, plus road bridges and footbridges (alignments are pre-flood). Bridges are drawn the OpenStreetMap way, as the road continuing across the span with a thin black casing. The Rivers overlay is OpenStreetMap's pre-flood water: river and reservoir areas filled and outlined in cyan, with river, canal and stream centrelines and their OSM names; alignments are pre-flood and are best checked against the 5 Feb 2026 Legion image. This page carries no flood-extent overlay. The Places overlay draws OpenStreetMap buildings, grounds and perimeters (schools, health facilities, temples, government buildings), power lines and other infrastructure, and place labels, all from pre-flood mapping. Footprints are hand-traced in OSM and only approximate individual roofs; they have been nudged ~3 m north-west so that most sit on the roofs in the 5 Feb 2026 Legion image (off-nadir roof positions differ slightly in the 28 Aug WorldView-2 scene). OSM coverage in the valley is incomplete, so the absence of a building on the map does not mean its absence on the ground. Coordinates shown are approximate.</p>
   </details>
   <p id="lastUpdated" class="muted"></p>
 </aside>
@@ -231,6 +244,7 @@
     <img id="imgPreS2" alt="Pre-flood satellite view, 3 June 2026 (Sentinel-2)">
     <img id="imgPrePS" alt="Pre-flood satellite view, 27 May 2026 (PlanetScope)">
     <div class="tiles" id="tilesVanPre" aria-hidden="true"></div>
+    <img id="imgPreS1" alt="Pre-flood radar view, 16 August 2026 (Sentinel-1)">
   </div></div>
   <div class="layer" id="layerPost"><div class="world">
     <img id="imgPostS2" alt="Post-flood satellite view, 27 August 2026 (Sentinel-2)">
@@ -239,14 +253,39 @@
     <img id="imgPostPS" alt="Flood-morning satellite view, 26 August 2026 (PlanetScope)">
     <div class="tiles" id="tilesSky31" aria-hidden="true"></div>
     <div class="tiles" id="tilesWv28" aria-hidden="true"></div>
+    <img id="imgPostS1" alt="Post-flood radar view, 28 August 2026 (Sentinel-1)">
   </div></div>
   <canvas id="contourCanvas" aria-hidden="true"></canvas>
   <canvas id="riverCanvas" aria-hidden="true"></canvas>
-  <canvas id="floodCanvas" aria-hidden="true"></canvas>
   <canvas id="roadCanvas" aria-hidden="true"></canvas>
+  <canvas id="placesCanvas" aria-hidden="true"></canvas>
   <canvas id="focusCanvas" aria-hidden="true"></canvas>
-  <span class="tag" id="tagPre">Pre · 5 Feb (Vantor 0.39 m) + 27 May</span>
-  <span class="tag" id="tagPost">Post · 26 Aug</span>
+  <select class="tag" id="tagPre" aria-label="Pre-flood imagery and view">
+    <optgroup label="Pre-flood imagery">
+      <option value="legion">Pre · 5 Feb 2026 · Vantor 0.39 m</option>
+      <option value="ps">Pre · 27 May 2026 · PlanetScope 3.8 m</option>
+      <option value="s2">Pre · 3 Jun 2026 · Sentinel-2 10 m</option>
+      <option value="s1">Pre · 16 Aug 2026 · Sentinel-1 radar 10 m</option>
+    </optgroup>
+    <optgroup label="View">
+      <option value="only">Pre only</option>
+      <option value="swipe">Compare (swipe)</option>
+    </optgroup>
+  </select>
+  <select class="tag" id="tagPost" aria-label="Post-flood imagery and view">
+    <optgroup label="Post-flood imagery">
+      <option value="ps">Post · 26 Aug · flood morning · PlanetScope 3.8 m</option>
+      <option value="s2">Post · 27 Aug · Sentinel-2 10 m</option>
+      <option value="ps28">Post · 28 Aug · PlanetScope 3.9 m</option>
+      <option value="wv28">Post · 28 Aug · WorldView-2 0.54 m</option>
+      <option value="sky31">Post · 31 Aug · SkySat 0.65 m</option>
+      <option value="s1">Post · 28 Aug · Sentinel-1 radar 10 m · cloud-free</option>
+    </optgroup>
+    <optgroup label="View">
+      <option value="only">Post only</option>
+      <option value="swipe">Compare (swipe)</option>
+    </optgroup>
+  </select>
   <div id="markers"></div>
   <div id="scalebar"><span id="scaleTxt"></span><div class="bar" id="scaleBar"></div></div>
   <span id="coords" aria-live="off"></span>
@@ -255,26 +294,13 @@
 </div>
 
 <div id="controls">
-  <div class="seg" role="group" aria-label="View mode">
-    <button id="modePre">Pre only</button>
-    <button id="modeSwipe" class="on">Swipe</button>
-    <button id="modePost">Post only</button>
-  </div>
   <button id="zoomIn" aria-label="Zoom in">＋</button>
   <button id="zoomOut" aria-label="Zoom out">－</button>
-  <button id="markToggle" aria-pressed="true">Labels: on</button>
-  <button id="contourToggle" aria-pressed="false">Contours: off</button>
-  <button id="landmarkToggle" aria-pressed="false">Landmarks: off</button>
-  <button id="floodToggle" aria-pressed="false">Flood: off</button>
-  <label id="postSrcLabel" for="postSrc">Post:
-    <select id="postSrc" aria-label="Post-flood image source">
-      <option value="ps">26 Aug · flood morning (PlanetScope 3.8 m)</option>
-      <option value="s2" selected>27 Aug · day after, clear (Sentinel-2 10 m)</option>
-      <option value="ps28">28 Aug · day 2 (PlanetScope 3.9 m)</option>
-      <option value="sky31">31 Aug · Trisuli Bazar (SkySat 0.65 m)</option>
-      <option value="wv28">28 Aug · Trisuli Bazar (WorldView-2 0.54 m)</option>
-    </select>
-  </label>
+  <button id="markToggle" aria-pressed="true">Labels</button>
+  <button id="contourToggle" aria-pressed="false">Contours</button>
+  <button id="landmarkToggle" aria-pressed="false">Landmarks</button>
+  <button id="placesToggle" aria-pressed="false">Places</button>
+  <button id="riverToggle" aria-pressed="false">Rivers</button>
 </div>
 
 <script>
@@ -330,11 +356,7 @@
   var PLACES = [
     { id: "trisuli",  name: "Trisuli Bazar",             x: 21054, y: 19700, zoom: 2.2, caption: "" },
     { id: "bidur",    name: "Bidur",                     x: 20876, y: 20093, zoom: 2.2, caption: "" },
-    { id: "battar",   name: "Battar",                    x: 21014, y: 20793, zoom: 2.2, caption: "" , outside: true },
-    { id: "devighat", name: "Devighat",                  x: 19690, y: 22007, zoom: 2.2, caption: "" , outside: true },
-    { id: "betrawati",name: "Betrawati",                 x: 22304, y: 17811, zoom: 2.2, caption: "", outside: true },
     { id: "hp-trisuli",  name: "Trisuli Hydropower Station (24 MW)", x: 20964, y: 19739, zoom: 3.0, caption: "" },
-    { id: "hp-devighat", name: "Devighat Hydropower Station (14 MW)", x: 20252, y: 21214, zoom: 3.0, caption: "" , outside: true }
   ];
 
   function place(id, src, w, h, transform, x, y, lazy) {
@@ -356,6 +378,9 @@
   // 27 May PlanetScope from the 16-bit surface-reflectance product, registered to the Sentinel-2 frame
   var imgPrePS = placeBox("imgPrePS", "assets/trisuli/pre_ps_sr_20260527.webp");
   var imgPostS2 = placeBox("imgPostS2", "assets/trisuli/post_s2_20260827.jpg");
+  // Sentinel-1 radar (gamma0 VV+VH, terrain-corrected, same ascending orbit 12 days apart): sees through cloud
+  var imgPreS1 = placeBox("imgPreS1", "assets/trisuli/pre_s1_20260816.webp", true);
+  var imgPostS1 = placeBox("imgPostS1", "assets/trisuli/post_s1_20260828.webp", true);
   // 26 Aug flood morning: the 9-scene mosaic plus the full-res scene over the town (both cut to the box);
   // the 27 Aug Sentinel-2 stays underneath as the backdrop.
   var imgPost28 = placeBox("imgPost28", "assets/trisuli/ps28_mosaic.webp", true);
@@ -486,7 +511,7 @@
       });
     });
     // elevation labels: index lines (elev % 200 == 0) only, deduped on a ~400 px grid
-    if (contourLabelsOn && showMarks && z >= 12) {
+    if (contourLabelsOn && z >= 12) {
       var seen = {};
       cctx.font = '600 9.5px "Source Sans 3", "Segoe UI", sans-serif';
       cctx.textAlign = "center"; cctx.textBaseline = "middle";
@@ -596,7 +621,35 @@
   var tilesWv28 = makeTileLayer("tilesWv28", "assets/trisuli/tiles/vantor_post");
   // pre side: Vantor Legion 5 Feb 2026 (0.39 m) over the west of the box, always on
   var tilesVanPre = makeTileLayer("tilesVanPre", "assets/trisuli/tiles/vantor_pre");
-  tilesVanPre.setVisible(true);
+  var tagPre = document.getElementById("tagPre");
+  var curPre = "legion", curPost = "wv28";
+  var PRE_SRCS = ["legion", "ps", "s2", "s1"], POST_SRCS = ["ps", "s2", "ps28", "wv28", "sky31", "s1"];
+  // keep the two tag selects showing the current imagery, mark the side shown alone
+  function refreshTags() {
+    tagPre.value = curPre; tagPost.value = curPost;
+    tagPre.classList.toggle("only", mode === "pre"); tagPost.classList.toggle("only", mode === "post");
+    tagPre.querySelector('option[value="only"]').textContent = (mode === "pre" ? "✓ " : "") + "Pre only";
+    tagPost.querySelector('option[value="only"]').textContent = (mode === "post" ? "✓ " : "") + "Post only";
+  }
+  function setPreSrc(which) {
+    curPre = which;
+    tilesVanPre.setVisible(which === "legion");   // Legion sits on top of the PlanetScope image
+    show(imgPrePS, which !== "s2" && which !== "s1"); // Sentinel-2 alone when asked
+    show(imgPreS1, which === "s1");                // radar covers the whole box
+    refreshTags();
+    pushHash();
+  }
+  function tagChange(side) {
+    return function () {
+      var v = this.value;
+      if (v === "only") setMode(mode === side ? "swipe" : side);
+      else if (v === "swipe") setMode("swipe");
+      else if (side === "pre") setPreSrc(v); else setPostSrc(v);
+      refreshTags();
+    };
+  }
+  tagPre.addEventListener("change", tagChange("pre"));
+  tagPost.addEventListener("change", tagChange("post"));
 
   // show/hide a raster layer; lazy layers fetch their image the first time they are shown
   function show(img, on) {
@@ -609,37 +662,29 @@
     show(imgPostPS, which === "ps");
     tilesSky31.setVisible(which === "sky31");
     tilesWv28.setVisible(which === "wv28");
-    tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)"
-      : which === "ps" ? "Post · 26 Aug flood morning"
-      : which === "ps28" ? "Post · 28 Aug (PlanetScope) + 27 Aug"
-      : which === "sky31" ? "Post · 31 Aug (SkySat) + 27 Aug"
-      : "Post · 28 Aug (WorldView-2) + 27 Aug";
-    var select = document.getElementById("postSrc");
-    if (select.value !== which) select.value = which;
+    show(imgPostS1, which === "s1");
+    curPost = which;
+    refreshTags();
     pushHash();
   }
   setPostSrc("wv28");
-  document.getElementById("postSrc").addEventListener("change", function (e) {
-    setPostSrc(e.target.value);
-  });
+  setPreSrc("legion");
 
   // --- rivers overlay (© OpenStreetMap contributors): cyan wash, with the
   // Lhende-Bhote Koshi-Trishuli flood stem highlighted red ---
   var riverCanvas = document.getElementById("riverCanvas");
   var vctx = riverCanvas.getContext("2d");
   var riversOn = false, riverData = null, riverLoading = false;
-  var RIVER_STYLES = {
-    f: { w: 2.0, color: "rgba(255,64,56,0.55)",  label: "#FF9C94" },
-    n: { w: 1.7, color: "rgba(79,216,255,0.45)", label: "#9BE4FA" }
-  };
+  // rivers from OpenStreetMap: water areas (cyan fill + outline), waterway centrelines
+  // (rivers solid, canals thinner, streams dashed) and names along the lines
   function ensureRivers() {
     if (riverData || riverLoading) return;
     riverLoading = true;
-    fetch("assets/trisuli/rivers.json")
+    fetch("assets/trisuli/rivers.json?v=" + TILE_VER)
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        j.rivers.forEach(computeBB);
-        riverData = j;
+        var wrap = function (arr) { return (arr || []).map(function (e) { var L = e.p ? { p: e.p, c: e.c } : { p: e }; computeBB(L); return L; }); };
+        riverData = { polys: wrap(j.polys), lines: wrap(j.lines), labels: j.labels };
         drawRivers();
       });
   }
@@ -662,13 +707,30 @@
     var z = zoomLevel();
     var wx0 = -panX / scale, wy0 = -panY / scale;
     var wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
-    vctx.lineJoin = "round"; vctx.lineCap = "round";
-    ["n", "f"].forEach(function (k) {
-      var st = RIVER_STYLES[k];
-      vctx.lineWidth = st.w;
-      vctx.strokeStyle = st.color;
+    vctx.lineJoin = "round";
+    vctx.beginPath();
+    riverData.polys.forEach(function (L) {
+      var bb = L.bb;
+      if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
+      var p = L.p;
+      vctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+      for (var i = 2; i < p.length; i += 2) vctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+      vctx.closePath();
+    });
+    vctx.fillStyle = "rgba(0,210,255,0.22)";
+    vctx.fill("evenodd");
+    vctx.lineWidth = z >= 14 ? 1.6 : 1.1;
+    vctx.strokeStyle = "rgba(0,230,255,0.95)";
+    vctx.stroke();
+    // centrelines: r = river, c = canal, s = stream (dashed, closer zoom only)
+    var LINE_STYLES = { r: { w: 2.2, dash: [], zmin: 0 }, c: { w: 1.4, dash: [], zmin: 12 }, s: { w: 1.0, dash: [4, 3], zmin: 13 } };
+    vctx.lineCap = "round";
+    Object.keys(LINE_STYLES).forEach(function (k) {
+      var st = LINE_STYLES[k];
+      if (z < st.zmin) return;
+      vctx.lineWidth = st.w; vctx.setLineDash(st.dash); vctx.strokeStyle = "rgba(0,230,255,0.85)";
       vctx.beginPath();
-      riverData.rivers.forEach(function (L) {
+      riverData.lines.forEach(function (L) {
         if (L.c !== k) return;
         var bb = L.bb;
         if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
@@ -678,13 +740,15 @@
       });
       vctx.stroke();
     });
-    if (showMarks && z >= 12) {
+    vctx.setLineDash([]);
+    if (z >= 12.5) {
       var seen = {};
-      vctx.font = 'italic 600 10px "Source Sans 3", "Segoe UI", sans-serif';
+      vctx.font = 'italic 600 11px "Source Sans 3", "Segoe UI", sans-serif';
       vctx.textAlign = "center"; vctx.textBaseline = "middle";
       riverData.labels.forEach(function (L) {
+        if (L[4] === "s" && z < 14) return;   // stream names only when close
         var sx = L[0] * scale + panX, sy = L[1] * scale + panY;
-        if (sx < 40 || sx > w - 40 || sy < 14 || sy > h - 14) return;
+        if (sx < 50 || sx > w - 50 || sy < 16 || sy > h - 16) return;
         var key = ((sx / 500) | 0) + "_" + ((sy / 500) | 0) + L[3];
         if (seen[key]) return;
         seen[key] = 1;
@@ -693,63 +757,14 @@
         vctx.rotate(L[2] * Math.PI / 180);
         vctx.lineWidth = 3; vctx.strokeStyle = "rgba(12,17,22,0.85)";
         vctx.strokeText(L[3], 0, 0);
-        vctx.fillStyle = RIVER_STYLES[L[4]].label;
+        vctx.fillStyle = "#9BE4FA";
         vctx.fillText(L[3], 0, 0);
         vctx.restore();
       });
     }
   }
 
-  // --- flood extent overlay: outflow outline of the debris channel traced
-  // from the 27-28 Aug scenes (see assets/trisuli/flood_extent.json) ---
-  var floodCanvas = document.getElementById("floodCanvas");
-  var fctx = floodCanvas.getContext("2d");
-  var floodOn = false, floodData = null, floodLoading = false;
-  function ensureFlood() {
-    if (floodData || floodLoading) return;
-    floodLoading = true;
-    fetch("assets/trisuli/flood_extent.json")
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        floodData = j.polys.map(function (p) { var L = { p: p }; computeBB(L); return L; });
-        drawFlood();
-      });
-  }
-  var floodRaf = 0;
-  function drawFlood() {
-    if (!floodOn || floodRaf) return;
-    floodRaf = requestAnimationFrame(function () { floodRaf = 0; renderFlood(); });
-  }
-  function renderFlood() {
-    ensureFlood();
-    var dpr = window.devicePixelRatio || 1;
-    var w = stage.clientWidth, h = stage.clientHeight;
-    if (floodCanvas.width !== Math.round(w * dpr) || floodCanvas.height !== Math.round(h * dpr)) {
-      floodCanvas.width = Math.round(w * dpr); floodCanvas.height = Math.round(h * dpr);
-      floodCanvas.style.width = w + "px"; floodCanvas.style.height = h + "px";
-    }
-    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.clearRect(0, 0, w, h);
-    if (!floodData) return;
-    var wx0 = -panX / scale, wy0 = -panY / scale;
-    var wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
-    fctx.lineJoin = "round";
-    fctx.beginPath();
-    floodData.forEach(function (L) {
-      var bb = L.bb;
-      if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
-      var p = L.p;
-      fctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
-      for (var i = 2; i < p.length; i += 2) fctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
-      fctx.closePath();
-    });
-    fctx.fillStyle = "rgba(255,64,56,0.10)";
-    fctx.fill("evenodd");
-    fctx.lineWidth = 1.4;
-    fctx.strokeStyle = "rgba(255,64,56,0.75)";
-    fctx.stroke();
-  }
-
+  var floodOn = false;   // flood overlay removed from this page; kept for the shared URL-hash format
   // --- roads & bridges overlay (© OpenStreetMap contributors) ---
   var roadCanvas = document.getElementById("roadCanvas");
   var rctx = roadCanvas.getContext("2d");
@@ -758,19 +773,18 @@
     t: { zmin: 0,    fill: "#FFC24D", w: 2.6 },
     p: { zmin: 0,    fill: "#FFD98A", w: 2.0 },
     s: { zmin: 10,   fill: "#F2E8C9", w: 1.4 },
-    x: { zmin: 11.5, fill: "#E4DCC6", w: 1.0 }
+    x: { zmin: 11.5, fill: "#E4DCC6", w: 1.0 },
+    r: { zmin: 12,   fill: "#D8D2C2", w: 0.9 },                       // residential / unclassified / service
+    k: { zmin: 12.5, fill: "#C9B58F", w: 0.9, dash: [5, 3] },          // tracks
+    f: { zmin: 12.5, fill: "#EFE7D3", w: 0.8, dash: [3, 3], nocase: true }  // paths, footways, steps
   };
   // symZ: zoom where the ][ / )( symbols appear (below that, like other maps,
   // an intact bridge is just the road continuing); tickZ: zoom where destroyed
   // bridges start showing as plain red ticks on the road
-  var BRIDGE_STYLES = {
-    rb: { symZ: 12.5, tickZ: 10.5, hw: 3.4, lw: 1.8, minLen: 8 },
-    fb: { symZ: 13.5, tickZ: 12,   hw: 2.2, lw: 1.2, minLen: 6 }
-  };
   function ensureRoads() {
     if (roadData || roadLoading) return;
     roadLoading = true;
-    fetch("assets/trisuli/roads.json")
+    fetch("assets/trisuli/roads.json?v=" + TILE_VER)
       .then(function (r) { return r.json(); })
       .then(function (j) {
         j.roads.forEach(computeBB);
@@ -805,9 +819,11 @@
         var st = styles[k];
         var t = Math.min(1, Math.max(0, (z - st.zmin) / 0.7));
         if (t <= 0) return;
+        if (pass === "casing" && st.nocase) return;
         rctx.lineWidth = pass === "casing" ? st.w + 1.6 : st.w;
         rctx.globalAlpha = t * (pass === "casing" ? 0.55 : 0.95);
         rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : st.fill;
+        rctx.setLineDash(pass === "fill" && st.dash ? st.dash : []);
         rctx.beginPath();
         list.forEach(function (L) {
           if (L.c !== k) return;
@@ -822,91 +838,30 @@
     }
     strokeSet(roadData.roads, ROAD_STYLES, "casing");
     strokeSet(roadData.roads, ROAD_STYLES, "fill");
-    // flood-damaged road sections drawn red over the fill (within ~175 m of the
-    // flood stem upstream of Galchhi; exposure-based presumption)
-    Object.keys(ROAD_STYLES).forEach(function (k) {
-      var st = ROAD_STYLES[k];
-      var t = Math.min(1, Math.max(0, (z - st.zmin) / 0.7));
-      if (t <= 0) return;
-      rctx.lineWidth = st.w + 0.2;
-      rctx.globalAlpha = t * 0.95;
-      rctx.strokeStyle = "#FF4D42";
-      rctx.beginPath();
-      (roadData.damaged || []).forEach(function (L) {
-        if (L.c !== k) return;
+    rctx.setLineDash([]);
+    // bridges (OpenStreetMap style): the road is redrawn along the span with a thin black
+    // casing on both sides and square ends, in the road's own colour and width
+    rctx.lineCap = "butt";
+    ["casing", "fill"].forEach(function (pass) {
+      roadData.bridges.forEach(function (L) {
+        var rs = ROAD_STYLES[L.rc] || ROAD_STYLES.f;
+        var t = Math.min(1, Math.max(0, (z - Math.max(rs.zmin, 11)) / 0.7));
+        if (t <= 0) return;
         var bb = L.bb;
         if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
+        var w1 = Math.max(rs.w, 2.2) * (z >= 14 ? 1.6 : 1.2);
+        rctx.lineWidth = pass === "casing" ? w1 + 2.4 : w1;
+        rctx.globalAlpha = t;
+        rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : rs.fill;
+        rctx.setLineDash([]);
+        rctx.beginPath();
         var p = L.p;
         rctx.moveTo(p[0] * scale + panX, p[1] * scale + panY);
         for (var i = 2; i < p.length; i += 2) rctx.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
-      });
-      rctx.stroke();
-    });
-    // bridge symbols: ][ abutment rails for road bridges, pinched )( rails for
-    // suspension footbridges; red = presumed destroyed (crosses the flood stem)
-    ["casing", "fill"].forEach(function (pass) {
-      roadData.bridges.forEach(function (L) {
-        var st = BRIDGE_STYLES[L.c];
-        var bb = L.bb;
-        if (bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1) return;
-        var p = L.p;
-        var ax = p[0] * scale + panX, ay = p[1] * scale + panY;
-        var bx = p[p.length - 2] * scale + panX, by = p[p.length - 1] * scale + panY;
-        var len = Math.hypot(bx - ax, by - ay);
-        if (z < st.symZ) {
-          // overview: intact bridges are just the road; destroyed ones get a red tick
-          if (!L.d) return;
-          var t0 = Math.min(1, Math.max(0, (z - st.tickZ) / 0.7));
-          if (t0 <= 0) return;
-          if (len < 4) {
-            var cx0 = (ax + bx) / 2, cy0 = (ay + by) / 2;
-            var u0 = len > 0.01 ? (bx - ax) / len : 1, v0 = len > 0.01 ? (by - ay) / len : 0;
-            ax = cx0 - u0 * 2; ay = cy0 - v0 * 2; bx = cx0 + u0 * 2; by = cy0 + v0 * 2;
-          }
-          rctx.lineWidth = pass === "casing" ? 3.4 : 2.0;
-          rctx.globalAlpha = t0 * (pass === "casing" ? 0.6 : 0.95);
-          rctx.strokeStyle = pass === "casing" ? "#0A0C0E" : "#FF4D42";
-          rctx.beginPath();
-          rctx.moveTo(ax, ay); rctx.lineTo(bx, by);
-          rctx.stroke();
-          return;
-        }
-        var t = Math.min(1, Math.max(0, (z - st.symZ) / 0.7));
-        if (len < st.minLen) { // grow tiny bridges to a legible symbol
-          var cx = (ax + bx) / 2, cy = (ay + by) / 2;
-          var ux0 = len > 0.01 ? (bx - ax) / len : 1, uy0 = len > 0.01 ? (by - ay) / len : 0;
-          ax = cx - ux0 * st.minLen / 2; ay = cy - uy0 * st.minLen / 2;
-          bx = cx + ux0 * st.minLen / 2; by = cy + uy0 * st.minLen / 2;
-          len = st.minLen;
-        }
-        var ux = (bx - ax) / len, uy = (by - ay) / len;
-        var vx = -uy, vy = ux;
-        var hw = st.hw, fl = hw * 0.9;
-        rctx.lineWidth = pass === "casing" ? st.lw + 1.4 : st.lw;
-        rctx.globalAlpha = t * (pass === "casing" ? 0.6 : 0.95);
-        rctx.strokeStyle = pass === "casing" ? "#0A0C0E"
-          : (L.d ? "#FF4D42" : "#FFC24D");
-        rctx.beginPath();
-        [1, -1].forEach(function (s) {
-          var rax = ax + vx * hw * s, ray = ay + vy * hw * s;
-          var rbx = bx + vx * hw * s, rby = by + vy * hw * s;
-          if (L.c === "rb") {
-            // ][ : straight rails with 45-degree outward flares at the ends
-            rctx.moveTo(rax - ux * fl + vx * fl * s, ray - uy * fl + vy * fl * s);
-            rctx.lineTo(rax, ray);
-            rctx.lineTo(rbx, rby);
-            rctx.lineTo(rbx + ux * fl + vx * fl * s, rby + uy * fl + vy * fl * s);
-          } else {
-            // )( : rails flare outward at the ends and pinch at midspan
-            var mx = (ax + bx) / 2 + vx * hw * 0.35 * s, my = (ay + by) / 2 + vy * hw * 0.35 * s;
-            rctx.moveTo(rax + vx * fl * s - ux * fl * 0.5, ray + vy * fl * s - uy * fl * 0.5);
-            rctx.quadraticCurveTo(rax, ray, mx, my);
-            rctx.quadraticCurveTo(rbx, rby, rbx + vx * fl * s + ux * fl * 0.5, rby + vy * fl * s + uy * fl * 0.5);
-          }
-        });
         rctx.stroke();
       });
     });
+    rctx.lineCap = "round";
     rctx.globalAlpha = 1;
     if (showMarks && z >= 11) {
       var seen = {};
@@ -926,6 +881,268 @@
         rctx.fillStyle = "#FFE9B8";
         rctx.fillText(L[3], 0, 0);
         rctx.restore();
+      });
+    }
+  }
+
+  // --- places overlay (© OpenStreetMap contributors): buildings, grounds/perimeters,
+  // infrastructure lines and points of interest, pre-flood mapping ---
+  var placesCanvas = document.getElementById("placesCanvas");
+  var pctx = placesCanvas.getContext("2d");
+  var placesOn = false, placesData = null, placesLoading = false;
+  var AREA_STYLES = {
+    school:     { fill: "rgba(110,168,255,0.16)", stroke: "#6EA8FF" },
+    health:     { fill: "rgba(255,125,176,0.16)", stroke: "#FF7DB0" },
+    worship:    { fill: "rgba(255,179,71,0.18)",  stroke: "#FFB347" },
+    civic:      { fill: "rgba(200,181,255,0.16)", stroke: "#C8B5FF" },
+    sport:      { fill: "rgba(127,224,140,0.14)", stroke: "#7FE08C" },
+    park:       { fill: "rgba(95,203,122,0.12)",  stroke: "#5FCB7A" },
+    cemetery:   { fill: "rgba(168,168,168,0.14)", stroke: "#A8A8A8" },
+    industrial: { fill: "rgba(217,194,122,0.14)", stroke: "#D9C27A" },
+    transport:  { fill: "rgba(176,196,222,0.14)", stroke: "#B0C4DE" }
+  };
+  var LINE_STYLES = {
+    power:     { color: "rgba(255,224,102,0.8)", w: 1,   dash: [6, 4] },
+    pipeline:  { color: "#9ADCFF",               w: 1,   dash: [2, 3] },
+    canal:     { color: "#4FD8FF",               w: 1.2, dash: [] },
+    dam:       { color: "#FFFFFF",               w: 2,   dash: [] },
+    wall:      { color: "#BBBBBB",                w: 0.8, dash: [] },
+    aerialway: { color: "#FFFFFF",               w: 1,   dash: [8, 4] }
+  };
+  function bldgFill(c) {
+    switch (c) {
+      case "commercial": return "rgba(230,200,140,0.6)";
+      case "school": return "rgba(110,168,255,0.7)";
+      case "health": return "rgba(255,125,176,0.75)";
+      case "worship": return "rgba(255,179,71,0.8)";
+      case "civic": return "rgba(200,181,255,0.7)";
+      default: return "rgba(235,230,220,0.55)"; // residential / other
+    }
+  }
+  function bldgStroke(c) {
+    switch (c) {
+      case "commercial": return "#E6C88C";
+      case "school": return "#6EA8FF";
+      case "health": return "#FF7DB0";
+      case "worship": return "#FFB347";
+      case "civic": return "#C8B5FF";
+      default: return "#EBE6DC";
+    }
+  }
+  var POI_STYLES = {
+    school: "#6EA8FF", health: "#FF7DB0", worship: "#FFB347",
+    police: "#C8B5FF", gov: "#C8B5FF", civic: "#C8B5FF",
+    emergency: "#FF5A4E",
+    bank: "#E8C98C", market: "#E8C98C", hotel: "#E8C98C", commercial: "#E8C98C",
+    transport: "#B0C4DE", power: "#FFE066", water: "#4FD8FF", telecom: "#DDDDDD",
+    place: "#FFFFFF", historic: "#F0D9A8", other: "#CCCCCC"
+  };
+  // label-collision priority: health, emergency, school, worship, police, gov, then place, then the rest
+  var POI_PRIORITY = ["health", "emergency", "school", "worship", "police", "gov"];
+  function poiPriority(c) {
+    var i = POI_PRIORITY.indexOf(c);
+    if (i >= 0) return i;
+    if (c === "place") return POI_PRIORITY.length;
+    return POI_PRIORITY.length + 1;
+  }
+  // classes visible from z>=13; the rest wait for z>=14.5
+  var POI_EARLY = { school: 1, health: 1, worship: 1, police: 1, gov: 1, emergency: 1, power: 1, water: 1, telecom: 1, place: 1 };
+  var POI_LABEL_EARLY = { place: 1, school: 1, health: 1, worship: 1 };
+  var POI_FALLBACK_LABEL = { school: 1, health: 1, worship: 1, police: 1, emergency: 1 };
+  function ensurePlaces() {
+    if (placesData || placesLoading) return;
+    placesLoading = true;
+    fetch("assets/trisuli/osm.json?v=" + TILE_VER)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        j.buildings.forEach(computeBB);
+        j.areas.forEach(computeBB);
+        j.lines.forEach(computeBB);
+        j.pois.sort(function (a, b) { return poiPriority(a.c) - poiPriority(b.c); });
+        placesData = j;
+        drawPlaces();
+      });
+  }
+  var placesRaf = 0;
+  function drawPlaces() {
+    if (!placesOn || placesRaf) return;
+    placesRaf = requestAnimationFrame(function () { placesRaf = 0; renderPlaces(); });
+  }
+  function renderPlaces() {
+    ensurePlaces();
+    var dpr = window.devicePixelRatio || 1;
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (placesCanvas.width !== Math.round(w * dpr) || placesCanvas.height !== Math.round(h * dpr)) {
+      placesCanvas.width = Math.round(w * dpr); placesCanvas.height = Math.round(h * dpr);
+      placesCanvas.style.width = w + "px"; placesCanvas.style.height = h + "px";
+    }
+    pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    pctx.clearRect(0, 0, w, h);
+    if (!placesData) return;
+    var z = zoomLevel();
+    var wx0 = -panX / scale, wy0 = -panY / scale;
+    var wx1 = (w - panX) / scale, wy1 = (h - panY) / scale;
+    function visible(L) {
+      var bb = L.bb;
+      return !(bb[2] < wx0 || bb[0] > wx1 || bb[3] < wy0 || bb[1] > wy1);
+    }
+    function ringPath(path, p) {
+      path.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+      for (var i = 2; i < p.length; i += 2) path.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+      path.closePath();
+    }
+    pctx.lineJoin = "round"; pctx.lineCap = "round";
+
+    // areas (grounds / perimeters)
+    var tArea = Math.min(1, Math.max(0, (z - 12.5) / 0.7));
+    if (tArea > 0) {
+      var areaGroups = {};
+      placesData.areas.forEach(function (L) {
+        if (!visible(L)) return;
+        (areaGroups[L.c] || (areaGroups[L.c] = [])).push(L);
+      });
+      Object.keys(areaGroups).forEach(function (c) {
+        var st = AREA_STYLES[c];
+        if (!st) return;
+        var path = new Path2D();
+        areaGroups[c].forEach(function (L) { ringPath(path, L.p); });
+        pctx.globalAlpha = tArea;
+        pctx.fillStyle = st.fill;
+        pctx.fill(path, "evenodd");
+        pctx.lineWidth = 1.2;
+        pctx.strokeStyle = st.stroke;
+        pctx.setLineDash([4, 3]);
+        pctx.stroke(path);
+      });
+      pctx.setLineDash([]);
+      pctx.globalAlpha = 1;
+    }
+
+    // lines (infrastructure)
+    var tLine = Math.min(1, Math.max(0, (z - 13) / 0.7));
+    if (tLine > 0) {
+      var lineGroups = {};
+      placesData.lines.forEach(function (L) {
+        if (!visible(L)) return;
+        (lineGroups[L.c] || (lineGroups[L.c] = [])).push(L);
+      });
+      Object.keys(lineGroups).forEach(function (c) {
+        var st = LINE_STYLES[c];
+        if (!st) return;
+        var path = new Path2D();
+        lineGroups[c].forEach(function (L) {
+          var p = L.p;
+          path.moveTo(p[0] * scale + panX, p[1] * scale + panY);
+          for (var i = 2; i < p.length; i += 2) path.lineTo(p[i] * scale + panX, p[i + 1] * scale + panY);
+        });
+        pctx.globalAlpha = tLine * (c === "power" ? 0.8 : 1);
+        pctx.lineWidth = st.w;
+        pctx.strokeStyle = st.color;
+        pctx.setLineDash(st.dash);
+        pctx.stroke(path);
+      });
+      pctx.setLineDash([]);
+      pctx.globalAlpha = 1;
+    }
+
+    // buildings (evenodd fill with holes; flood exposure overrides the class fill).
+    // L.f is not currently present in osm.json (this page carries no flood-extent
+    // overlay), so this red/orange path is dormant code that only activates if a
+    // future osm.json build adds an "f" (flood exposure) field to buildings.
+    var tBldg = Math.min(1, Math.max(0, (z - 14) / 0.7));
+    if (tBldg > 0) {
+      var fillGroups = {}, exposedByClass = {};
+      placesData.buildings.forEach(function (L) {
+        if (!visible(L)) return;
+        var key = L.f ? ("exp" + L.f) : (L.c || "other");
+        (fillGroups[key] || (fillGroups[key] = [])).push(L);
+        if (L.f) (exposedByClass[L.c || "other"] || (exposedByClass[L.c || "other"] = [])).push(L);
+      });
+      // Close in, the fill thins out so the roof in the imagery stays visible and the
+      // OSM footprint reads as an outline over it (footprints are hand-traced and sit a
+      // few metres off individual roofs, so an opaque fill would hide what it mislabels).
+      var hiZ = Math.min(1, Math.max(0, (z - 15.5) / 1.5));
+      Object.keys(fillGroups).forEach(function (key) {
+        var fillColor = key === "exp1" ? "rgba(255,64,56,0.85)"
+                       : key === "exp2" ? "rgba(255,150,30,0.8)"
+                       : bldgFill(key);
+        var path = new Path2D();
+        fillGroups[key].forEach(function (L) {
+          ringPath(path, L.p);
+          (L.h || []).forEach(function (hole) { ringPath(path, hole); });
+        });
+        pctx.globalAlpha = tBldg * (1 - 0.7 * hiZ);
+        pctx.fillStyle = fillColor;
+        pctx.fill(path, "evenodd");
+        pctx.globalAlpha = tBldg;
+        pctx.lineWidth = 0.6 + 0.6 * hiZ;
+        pctx.strokeStyle = hiZ > 0.5 ? "rgba(255,250,235,0.85)" : "rgba(10,12,14,0.7)";
+        pctx.stroke(path);
+      });
+      if (z >= 15.5) {
+        Object.keys(exposedByClass).forEach(function (c) {
+          var path = new Path2D();
+          exposedByClass[c].forEach(function (L) { ringPath(path, L.p); });
+          pctx.lineWidth = 1;
+          pctx.strokeStyle = bldgStroke(c);
+          pctx.stroke(path);
+        });
+      }
+      pctx.globalAlpha = 1;
+    }
+
+    // points of interest, with simple label-collision avoidance
+    if (placesData.pois.length) {
+      var placed = [];
+      var labelFits = function (x0, y0, x1, y1) {
+        for (var i = 0; i < placed.length; i++) {
+          var r = placed[i];
+          if (x0 < r[2] && x1 > r[0] && y0 < r[3] && y1 > r[1]) return false;
+        }
+        return true;
+      };
+      var dotR = z >= 15 ? 7 : 5;
+      placesData.pois.forEach(function (P) {
+        var early = POI_EARLY[P.c];
+        // banks are the single largest POI class (37 of 96) and clutter the town at
+        // mid zoom, so they get their own later reveal than the rest of the "late" set
+        var zmin = P.c === "bank" ? 15.5 : early ? 13 : 14.5;
+        var t = Math.min(1, Math.max(0, (z - zmin) / 0.7));
+        if (t <= 0) return;
+        var sx = P.x * scale + panX, sy = P.y * scale + panY;
+        if (sx < -20 || sx > w + 20 || sy < -20 || sy > h + 20) return;
+        var color = POI_STYLES[P.c] || POI_STYLES.other;
+        var isPlace = P.c === "place";
+        var radius = isPlace ? 3 : dotR;
+        pctx.globalAlpha = t;
+        pctx.beginPath();
+        pctx.arc(sx, sy, radius, 0, Math.PI * 2);
+        pctx.fillStyle = color;
+        pctx.fill();
+        pctx.lineWidth = 1.5;
+        pctx.strokeStyle = "rgba(10,12,14,0.85)";
+        pctx.stroke();
+        pctx.globalAlpha = 1;
+
+        if (!showMarks) return;
+        var labelZmin = P.c === "bank" ? 16 : POI_LABEL_EARLY[P.c] ? 13 : 14;
+        if (z < labelZmin) return;
+        var text = P.n || (POI_FALLBACK_LABEL[P.c] ? P.k : null);
+        if (!text) return;
+        var tx = sx + radius + 4, ty = sy;
+        pctx.font = isPlace
+          ? 'italic 600 10.5px "Source Sans 3", "Segoe UI", sans-serif'
+          : '600 10.5px "Source Sans 3", "Segoe UI", sans-serif';
+        var tw = pctx.measureText(text).width;
+        var x0 = tx - 2, y0 = ty - 7, x1 = tx + tw + 2, y1 = ty + 7;
+        if (x1 < 0 || x0 > w || y1 < 0 || y0 > h) return;
+        if (!labelFits(x0, y0, x1, y1)) return;
+        placed.push([x0, y0, x1, y1]);
+        pctx.textAlign = "left"; pctx.textBaseline = "middle";
+        pctx.lineWidth = 3; pctx.strokeStyle = "rgba(12,17,22,0.85)";
+        pctx.strokeText(text, tx, ty);
+        pctx.fillStyle = color;
+        pctx.fillText(text, tx, ty);
       });
     }
   }
@@ -1005,8 +1222,8 @@
     });
     drawContours();
     drawRivers();
-    drawFlood();
     drawRoads();
+    drawPlaces();
     tilesSky31.update();
     tilesWv28.update();
     tilesVanPre.update();
@@ -1103,43 +1320,40 @@
 
   function setMode(m) {
     mode = m;
-    ["Pre", "Swipe", "Post"].forEach(function (n) {
-      document.getElementById("mode" + n).classList.toggle("on", n.toLowerCase() === m);
-    });
+    refreshTags();
     apply();
   }
-  document.getElementById("modePre").onclick = function () { setMode("pre"); };
-  document.getElementById("modeSwipe").onclick = function () { setMode("swipe"); };
-  document.getElementById("modePost").onclick = function () { setMode("post"); };
   document.getElementById("zoomIn").onclick = function () { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1.4); };
   document.getElementById("zoomOut").onclick = function () { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.4); };
   document.getElementById("contourToggle").onclick = function () {
     contoursOn = !contoursOn;
     contourLabelsOn = contoursOn;   // elevation labels come on and off with the contours
     contourCanvas.style.display = contoursOn ? "block" : "none";
-    this.textContent = "Contours: " + (contoursOn ? "on" : "off");
     this.setAttribute("aria-pressed", String(contoursOn));
     apply();
   };
-  document.getElementById("floodToggle").onclick = function () {
-    floodOn = !floodOn;
-    floodCanvas.style.display = floodOn ? "block" : "none";
-    this.textContent = "Flood: " + (floodOn ? "on" : "off");
-    this.setAttribute("aria-pressed", String(floodOn));
+  // Landmarks = roads (with bridges) + rivers together
+  document.getElementById("riverToggle").onclick = function () {
+    riversOn = !riversOn;
+    riverCanvas.style.display = riversOn ? "block" : "none";
+    this.setAttribute("aria-pressed", String(riversOn));
     apply();
   };
-  // Landmarks = roads (with bridges) + rivers together
   document.getElementById("landmarkToggle").onclick = function () {
-    var on = !(roadsOn || riversOn);
-    roadsOn = riversOn = on;
-    roadCanvas.style.display = riverCanvas.style.display = on ? "block" : "none";
-    this.textContent = "Landmarks: " + (on ? "on" : "off");
+    var on = !roadsOn;
+    roadsOn = on;
+    roadCanvas.style.display = on ? "block" : "none";
     this.setAttribute("aria-pressed", String(on));
+    apply();
+  };
+  document.getElementById("placesToggle").onclick = function () {
+    placesOn = !placesOn;
+    placesCanvas.style.display = placesOn ? "block" : "none";
+    this.setAttribute("aria-pressed", String(placesOn));
     apply();
   };
   document.getElementById("markToggle").onclick = function () {
     showMarks = !showMarks;
-    this.textContent = "Labels: " + (showMarks ? "on" : "off");
     this.setAttribute("aria-pressed", String(showMarks));
     apply();
   };
@@ -1237,13 +1451,14 @@
     if (contourLabelsOn) l.push("elev");
     if (roadsOn) l.push("roads");
     if (riversOn) l.push("rivers");
+    if (placesOn) l.push("places");
     if (floodOn) l.push("flood");
     return l;
   }
   function viewHash() {
     var cx = (stage.clientWidth / 2 - panX) / scale, cy = (stage.clientHeight / 2 - panY) / scale;
     var lon = BW + (BE - BW) * cx / WORLD_W, lat = BN - (BN - BS) * cy / WORLD_H;
-    var parts = ["m=" + mode, "src=" + document.getElementById("postSrc").value, "z=" + scale.toFixed(3),
+    var parts = ["m=" + mode, "src=" + curPost, "pre=" + curPre, "z=" + scale.toFixed(3),
                  "c=" + lat.toFixed(5) + "," + lon.toFixed(5), "l=" + activeLayers().join(",")];
     if (mode === "swipe") parts.push("s=" + swipeFrac.toFixed(2));
     return "#" + parts.join("&");
@@ -1268,7 +1483,8 @@
     h.split("&").forEach(function (kv) { var i = kv.indexOf("="); if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
     restoring = true;
     if (q.m === "pre" || q.m === "swipe" || q.m === "post") setMode(q.m);
-    if (q.src && document.querySelector('#postSrc option[value="' + q.src + '"]')) setPostSrc(q.src);
+    if (q.src && POST_SRCS.indexOf(q.src) >= 0) setPostSrc(q.src);
+    if (q.pre && PRE_SRCS.indexOf(q.pre) >= 0) setPreSrc(q.pre);
     var sf = parseFloat(q.s);
     if (!isNaN(sf)) swipeFrac = Math.min(1, Math.max(0, sf));
     if (q.l !== undefined) {
@@ -1279,7 +1495,8 @@
       setToggle("elevToggle", has("elev"));
       setToggle("roadToggle", has("roads"));
       setToggle("riverToggle", has("rivers"));
-      setToggle("landmarkToggle", has("roads") || has("rivers"));
+      setToggle("landmarkToggle", has("roads"));
+      setToggle("placesToggle", has("places"));
       setToggle("floodToggle", has("flood"));
     }
     var z = parseFloat(q.z), c = (q.c || "").split(",").map(parseFloat);

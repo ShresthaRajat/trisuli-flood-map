@@ -179,6 +179,10 @@
     <img id="imgPostPS" alt="Flood-morning satellite view, 26 August 2026 (PlanetScope)">
     <div class="tiles" id="tilesSky31" aria-hidden="true"></div>
     <div class="tiles" id="tilesPel01" aria-hidden="true"></div>
+    <div class="tiles" id="tilesSky27" aria-hidden="true"></div>
+    <div class="tiles" id="tilesWv3" aria-hidden="true"></div>
+    <div class="tiles" id="tilesLeg01" aria-hidden="true"></div>
+    <img id="imgPostS1" alt="Post-flood radar view, 28 August 2026 (Sentinel-1)">
   </div></div>
   <canvas id="contourCanvas" aria-hidden="true"></canvas>
   <canvas id="riverCanvas" aria-hidden="true"></canvas>
@@ -208,11 +212,21 @@
   <button id="floodToggle" aria-pressed="false">Flood: off</button>
   <label id="postSrcLabel" for="postSrc">Post:
     <select id="postSrc" aria-label="Post-flood image source">
+      <optgroup label="Whole corridor">
       <option value="ps">26 Aug · flood morning (PlanetScope 3.8 m)</option>
       <option value="s2" selected>27 Aug · day after, clear (Sentinel-2 10 m)</option>
       <option value="ps28">28 Aug · day 2 (PlanetScope 3.9 m)</option>
+      <option value="s1">28 Aug 18:06 · radar, cloud-free (Sentinel-1 10 m)</option>
+      </optgroup>
+      <optgroup label="Upper valley · Syabrubesi–Rasuwagadhi (sub-metre)">
+      <option value="sky27">27 Aug 07:45 · first light (SkySat 0.8 m, ½ cloud)</option>
+      <option value="wv3">27 Aug 10:49 · sharpest (WorldView-3 0.35 m, ¾ cloud)</option>
+      <option value="pel01">1 Sep 10:51 · Pelican 0.56 m (½ cloud)</option>
+      <option value="leg01">1 Sep 08:43 · clearest (Legion 0.4–0.5 m, hazy)</option>
+      </optgroup>
+      <optgroup label="Trisuli Bazar reach (sub-metre)">
       <option value="sky31">31 Aug · Trisuli Bazar (SkySat 0.65 m)</option>
-      <option value="pel01">1 Sep · upper valley (Pelican 0.56 m)</option>
+      </optgroup>
     </select>
   </label>
   <details id="srcNotes">
@@ -222,7 +236,7 @@
       <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
       <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
       <span><i class="dot d-city"></i>Major town / city (reference)</span>
-    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber), tertiary branch roads at closer zoom, and bridge symbols (][ = road bridges, )( = suspension footbridges) from © OpenStreetMap contributors — alignments are pre-flood. Bridges drawn red cross the Lhende–Bhote Koshi–Trishuli flood stem upstream of Galchhi and are presumed destroyed or damaged (exposure-based, not field-verified); amber bridges are outside the flood path, and road sections drawn red (within ~175 m of the flood stem) are presumed flood-damaged on the same exposure basis. The rivers overlay (also OSM) washes rivers in cyan, with the Lhende–Bhote Koshi–Trishuli flood stem highlighted red. The separate flood overlay outlines the flood extent — the widened debris channel traced from the post-event imagery (27 Aug Sentinel-2, with the 28 Aug PlanetScope mosaic filling cloud), classified within ~500 m of the river and generalised to ~30 m; it is approximate, breaks where all post-event scenes are clouded, and is thin and patchy in the hazy uppermost Lhende valley. Coordinates shown are approximate.</p>
+    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy), 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT) or 28 Aug ~18:06 NPT radar (Sentinel-1, 10 m, cloud-free), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach), or — over the upper valley from Syabrubesi to Rasuwagadhi — sub-metre views from 27 Aug (SkySat 0.8 m at 07:45, WorldView-3 0.35 m at 10:49 NPT) and 1 Sep (Legion 0.4–0.5 m, the clearest; Pelican 0.56 m). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. The remaining upper-valley options are the most useful of the other post-event sub-metre scenes released openly for this flood, all over the Syabrubesi–Timure–Rasuwagadhi reach (none reaches Trisuli Bazar): from <a href="https://vantor-opendata.s3.amazonaws.com/events/Nepal-Flooding-Aug-2026/collection.json">Vantor’s open data</a> (© 2026 Vantor, CC-BY-NC-4.0; also mirrored on OpenAerialMap) four WorldView-3 strips from 27 Aug ~10:49 NPT (0.30–0.35 m, 71–79 % cloud, the sharpest imagery of the event) and two Legion frames from 1 Sep ~08:43 NPT (0.37–0.46 m) that are hazy but largely cloud-free — the clearest post-flood view of the upper valley; from Planet’s open disaster data, the two 27 Aug ~07:45 NPT SkySat collects over Rasuwagadhi and Syabrubesi (0.8 m, ~50 % cloud, the earliest sub-metre imagery after the flood). Left out as too clouded or superseded: the 27 Aug Pelican frames (83–85 % cloud; the 1 Sep Pelican re-images the same footprint), the 28 Aug WorldView-2 and Legion frames over the upper valley (78–81 % cloud, bracketed by the sharper 27 Aug and clearer 1 Sep scenes), and the 31 Aug and 5 Sep Legion collects (94 % cloud). Each of these layers is streamed as a tile pyramid along the flood stem: a ~2.9 m overview of the whole footprint, ~1.5 m tiles within ~2 km of the river, ~0.73 m within ~0.9 km, and ~0.49 m within ~0.4 km for the WorldView-3 and 1 Sep Legion layers; the Vantor scenes agree with each other and with the re-registered Bidur scenes to within a few metres and are shown as delivered; the 27 Aug SkySat pair was cross-correlated against the 1 Sep Legion layer and sits within ~10 m of it. The radar option is the 28 Aug ~18:06 NPT Sentinel-1D pass (© ESA Copernicus, radiometrically terrain-corrected gamma0 from the Microsoft Planetary Computer, 10 m, rendered at ~11.7 m from VV and VH backscatter in decibels with a light speckle filter) — the only post-flood image of the whole corridor without cloud. Radar reads differently from a photograph: water and fresh wet sediment return little signal and appear dark, vegetation and buildings appear bright, and slopes facing away from the satellite fall into shadow, so the sediment-filled channel shows as a dark band along the river; a swath edge leaves the far south-west corner of the extent empty. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber), tertiary branch roads at closer zoom, and bridge symbols (][ = road bridges, )( = suspension footbridges) from © OpenStreetMap contributors — alignments are pre-flood. Bridges drawn red cross the Lhende–Bhote Koshi–Trishuli flood stem upstream of Galchhi and are presumed destroyed or damaged (exposure-based, not field-verified); amber bridges are outside the flood path, and road sections drawn red (within ~175 m of the flood stem) are presumed flood-damaged on the same exposure basis. The rivers overlay (also OSM) washes rivers in cyan, with the Lhende–Bhote Koshi–Trishuli flood stem highlighted red. The separate flood overlay outlines the flood extent — the widened debris channel traced from the post-event imagery (27 Aug Sentinel-2, with the 28 Aug PlanetScope mosaic filling cloud), classified within ~500 m of the river and generalised to ~30 m; it is approximate, breaks where all post-event scenes are clouded, and is thin and patchy in the hazy uppermost Lhende valley. Coordinates shown are approximate.</p>
   </details>
   <span id="coords"></span>
 </div>
@@ -280,6 +294,8 @@
   // trim the black scene-edge wedges at the bottom of the PlanetScope frames
   imgPrePS.style.clipPath = "polygon(0 0, 100% 0, 100% 100%, 39.5% 100%, 0 93%)";
   var imgPostS2 = place("imgPostS2", IMG_BASE + "post_s2_20260827.jpg", WORLD_W, WORLD_H);
+  // Sentinel-1 radar (gamma0 VV+VH, terrain-corrected, ~11.7 m render): sees through cloud; lazy
+  var imgPostS1 = place("imgPostS1", IMG_BASE + "post_s1_20260828.webp", WORLD_W, WORLD_H, null, true);
   // 26 Aug flood morning: a 9-scene mosaic (passes ~10:46 and ~11:30 NPT, warped to the
   // world grid, transparent beyond the swaths) plus the original full-res scene over the
   // towns; the 27 Aug Sentinel-2 stays underneath as the full-extent backdrop.
@@ -412,7 +428,7 @@
       });
     });
     // elevation labels: index lines (elev % 200 == 0) only, deduped on a ~400 px grid
-    if (contourLabelsOn && showMarks && z >= 12) {
+    if (contourLabelsOn && z >= 12) {   // elevation labels follow the contour/elev toggles, not place labels
       var seen = {};
       cctx.font = '600 9.5px "Source Sans 3", "Segoe UI", sans-serif';
       cctx.textAlign = "center"; cctx.textBaseline = "middle";
@@ -520,6 +536,14 @@
   }
   var tilesSky31 = makeTileLayer("tilesSky31", "assets/full/tiles/skysat0831");
   var tilesPel01 = makeTileLayer("tilesPel01", "assets/full/tiles/pelican0901");
+  // upper-valley sub-metre scenes (Vantor open data + Planet open disaster data), lazy pyramids
+  var tilesSky27 = makeTileLayer("tilesSky27", "assets/full/tiles/skysat0827");
+  var tilesWv3 = makeTileLayer("tilesWv3", "assets/full/tiles/wv3_0827");
+  var tilesLeg01 = makeTileLayer("tilesLeg01", "assets/full/tiles/legion0901");
+  var TILE_LAYERS = { sky31: tilesSky31, pel01: tilesPel01, sky27: tilesSky27, wv3: tilesWv3, leg01: tilesLeg01 };
+  var POST_TAGS = { s2: "Post · 27 Aug (Sentinel-2)", ps: "Post · 26 Aug flood morning", ps28: "Post · 28 Aug (PlanetScope) + 27 Aug", s1: "Post · 28 Aug radar (Sentinel-1)",
+    sky31: "Post · 31 Aug (SkySat) + 27 Aug", pel01: "Post · 1 Sep (Pelican) + 27 Aug", sky27: "Post · 27 Aug 07:45 (SkySat) + 27 Aug",
+    wv3: "Post · 27 Aug 10:49 (WorldView-3) + 27 Aug", leg01: "Post · 1 Sep 08:43 (Legion) + 27 Aug" };
 
   // show/hide a raster layer; lazy layers fetch their image the first time they are shown
   function show(img, on) {
@@ -530,13 +554,9 @@
     show(imgPost28, which === "ps28");
     show(imgPostPSWide, which === "ps");
     show(imgPostPS, which === "ps");
-    tilesSky31.setVisible(which === "sky31");
-    tilesPel01.setVisible(which === "pel01");
-    tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)"
-      : which === "ps" ? "Post · 26 Aug flood morning"
-      : which === "ps28" ? "Post · 28 Aug (PlanetScope) + 27 Aug"
-      : which === "sky31" ? "Post · 31 Aug (SkySat) + 27 Aug"
-      : "Post · 1 Sep (Pelican) + 27 Aug";
+    Object.keys(TILE_LAYERS).forEach(function (k) { TILE_LAYERS[k].setVisible(which === k); });
+    show(imgPostS1, which === "s1");
+    tagPost.textContent = POST_TAGS[which] || POST_TAGS.s2;
     var select = document.getElementById("postSrc");
     if (select.value !== which) select.value = which;
     pushHash();
@@ -891,8 +911,7 @@
     drawRivers();
     drawFlood();
     drawRoads();
-    tilesSky31.update();
-    tilesPel01.update();
+    Object.keys(TILE_LAYERS).forEach(function (k) { TILE_LAYERS[k].update(); });
     updateScalebar();
     pushHash();
   }

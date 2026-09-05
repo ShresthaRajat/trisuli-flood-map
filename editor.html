@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>River overlay editor — Trisuli</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #0C1116; color: #E6ECF0;
+    font: 13px/1.4 -apple-system, "Segoe UI", "Source Sans 3", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  button {
+    background: #1D2831; border: 1px solid #26313A; border-radius: 6px;
+    color: #E6ECF0; padding: 5px 10px; cursor: pointer;
+  }
+  button:hover { background: #24313C; }
+  button:active { background: #1A232B; }
+  button.active { background: #5FB3C4; border-color: #5FB3C4; color: #0C1116; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+  select, input[type=text], input[type=number] {
+    background: #1D2831; border: 1px solid #26313A; border-radius: 6px;
+    color: #E6ECF0; padding: 4px 6px;
+  }
+  #toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 6px 10px; background: #151C23; border-bottom: 1px solid #26313A;
+    user-select: none;
+  }
+  #toolbar .sep { width: 1px; align-self: stretch; background: #26313A; margin: 0 4px; }
+  #toolbar label.fld { display: flex; align-items: center; gap: 4px; color: #8FA0AB; }
+  #modMarker { color: #FFC24D; font-weight: 700; margin-left: 2px; visibility: hidden; }
+  #saveStatus { color: #8FA0AB; margin-left: 4px; white-space: nowrap; }
+  #selPanel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #selSummary { color: #5FB3C4; font-weight: 600; }
+  #nameInput { width: 160px; }
+  #angleInput { width: 64px; }
+  #mapWrap { position: relative; flex: 1; overflow: hidden; background: #05080B; touch-action: none; }
+  #mapWrap canvas { position: absolute; left: 0; top: 0; display: block; }
+  #statusBar {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 4px 10px; background: #151C23; border-top: 1px solid #26313A;
+    color: #8FA0AB; font-size: 12px; user-select: none;
+  }
+  #legend { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #legend b { color: #E6ECF0; }
+  [hidden] { display: none !important; }
+
+  #floatPanel {
+    position: absolute; left: 12px; top: 12px; z-index: 5;
+    background: #151C23; border: 1px solid #26313A; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    width: 172px; user-select: none;
+  }
+  #floatHeader {
+    padding: 7px 10px; background: #1D2831; border-bottom: 1px solid #26313A;
+    border-radius: 7px 7px 0 0; cursor: move; font-weight: 700; color: #8FA0AB;
+    letter-spacing: .05em; text-transform: uppercase; font-size: 11px;
+  }
+  .floatBtns { display: flex; flex-direction: column; gap: 4px; padding: 7px; }
+  .floatBtn {
+    display: flex; align-items: center; gap: 9px; text-align: left;
+    padding: 7px 9px; width: 100%; font-size: 13px;
+  }
+  .floatBtn .ic { display: inline-block; width: 20px; text-align: center; font-size: 16px; flex: none; line-height: 1; }
+  .floatSep { height: 1px; background: #26313A; margin: 3px 4px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <label class="fld">BG
+    <select id="bgSelect">
+      <option value="legion">5 Feb Vantor Legion (0.39m)</option>
+      <option value="ps">27 May PlanetScope</option>
+      <option value="s2">27 Aug Sentinel-2</option>
+    </select>
+  </label>
+  <div class="sep"></div>
+  <button id="loadBtn" title="Re-fetch rivers.json">Load</button>
+  <button id="saveBtn" title="POST to /save/rivers">Save</button>
+  <span id="modMarker">●</span>
+  <span id="saveStatus"></span>
+  <button id="downloadBtn" title="Download rivers.json">Download JSON</button>
+  <div class="sep"></div>
+  <button id="undoBtn" class="undoBtnCls" title="Ctrl/Cmd+Z">Undo</button>
+  <button id="redoBtn" class="redoBtnCls" title="Shift+Ctrl/Cmd+Z">Redo</button>
+  <div class="sep"></div>
+  <button class="toolbtn active" data-tool="select" title="1">Select</button>
+  <button class="toolbtn" data-tool="moveVertex" title="2">Move vertex</button>
+  <button class="toolbtn" data-tool="addVertex" title="3">Add vertex</button>
+  <button class="toolbtn" data-tool="deleteVertex" title="4">Delete vertex</button>
+  <button class="toolbtn" data-tool="moveFeature" title="5">Move feature</button>
+  <button class="toolbtn" data-tool="deleteFeature" title="6">Delete feature</button>
+  <div class="sep"></div>
+  <button class="toolbtn" data-tool="poly" title="7">Draw polygon</button>
+  <button class="toolbtn" data-tool="lineSolid" title="8">Draw solid line</button>
+  <button class="toolbtn" data-tool="lineDashed" title="9">Draw dashed line</button>
+  <button class="toolbtn" data-tool="label" title="0">Add label</button>
+  <button class="toolbtn" data-tool="pan" title="P / hold Space">Pan</button>
+  <div class="sep"></div>
+  <button id="deleteBtn" title="Delete key — removes current selection">Delete selected</button>
+  <div class="sep"></div>
+  <div id="selPanel" hidden>
+    <span id="selSummary"></span>
+    <span id="labelFields" hidden>
+      <label class="fld">Name <input id="nameInput" type="text"></label>
+      <label class="fld">Angle <input id="angleInput" type="number" min="-90" max="90" step="1"></label>
+      <label class="fld">Kind
+        <select id="kindSelect">
+          <option value="r">river</option>
+          <option value="c">canal/stream</option>
+          <option value="w">water body</option>
+          <option value="s">small stream</option>
+        </select>
+      </label>
+    </span>
+    <span id="lineFields" hidden>
+      <button id="classSolidBtn" title="Solid (canal / named stream)">Solid</button>
+      <button id="classDashedBtn" title="Dashed (unnamed stream)">Dashed</button>
+    </span>
+  </div>
+</div>
+
+<div id="mapWrap">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="fgCanvas"></canvas>
+  <div id="floatPanel">
+    <div id="floatHeader">Edit</div>
+    <div class="floatBtns">
+      <button class="toolbtn floatBtn" data-tool="select" title="1"><span class="ic">&#9678;</span>Select</button>
+      <button class="toolbtn floatBtn" data-tool="moveVertex" title="2"><span class="ic">&#10021;</span>Move vertex</button>
+      <button class="toolbtn floatBtn" data-tool="addVertex" title="3"><span class="ic">&#8853;</span>Add vertex</button>
+      <button class="toolbtn floatBtn" data-tool="deleteVertex" title="4"><span class="ic">&#8854;</span>Delete vertex</button>
+      <button class="toolbtn floatBtn" data-tool="moveFeature" title="5"><span class="ic">&#10011;</span>Move feature</button>
+      <button class="toolbtn floatBtn" data-tool="deleteFeature" title="6"><span class="ic">&#10005;</span>Delete feature</button>
+      <div class="floatSep"></div>
+      <button class="toolbtn floatBtn" data-tool="poly" title="7"><span class="ic">&#11040;</span>Draw polygon</button>
+      <button class="toolbtn floatBtn" data-tool="lineSolid" title="8"><span class="ic">&#8213;</span>Solid line</button>
+      <button class="toolbtn floatBtn" data-tool="lineDashed" title="9"><span class="ic">&#9508;</span>Dashed line</button>
+      <button class="toolbtn floatBtn" data-tool="label" title="0"><span class="ic">Aa</span>Add label</button>
+      <button class="toolbtn floatBtn" data-tool="pan" title="P / hold Space"><span class="ic">&#9974;</span>Pan</button>
+      <div class="floatSep"></div>
+      <button class="floatBtn undoBtnCls" title="Ctrl/Cmd+Z"><span class="ic">&#8630;</span>Undo</button>
+      <button class="floatBtn redoBtnCls" title="Shift+Ctrl/Cmd+Z"><span class="ic">&#8631;</span>Redo</button>
+    </div>
+  </div>
+</div>
+
+<div id="statusBar">
+  <span id="status"></span>
+  <span id="legend">
+    <b>1-0</b> modes &middot; <b>P</b> pan &middot; <b>Space</b> hold-to-pan &middot; <b>Alt+click</b>/<b>Backspace</b> delete vertex &middot;
+    <b>Del</b> delete selection &middot; <b>Enter</b>/dbl-click finish draw &middot; <b>Esc</b> cancel/deselect &middot; <b>Ctrl/Cmd+Z</b> undo &middot; <b>Shift+Ctrl/Cmd+Z</b> redo
+  </span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ============================== state ==============================
+  var BOX = { x0: 20435, y0: 18685, x1: 21899, y1: 20482, w: 1464, h: 1797 };
+  var MPP = 2.93; // metres per world px
+
+  var data = { polys: [], lines: [], labels: [], source: "" };
+  var undoStack = [], redoStack = [];
+  var modified = false;
+
+  var view = { scale: 1, panX: 0, panY: 0 };
+  var SCALE_MIN = 0.3, SCALE_MAX = 12;
+  var VERTEX_HIT_RADIUS = 9;   // px, screen-space hit radius for vertex handles
+  var VERTEX_HANDLE_SIZE = 7;  // px, rendered handle square size
+  var EDGE_HIT_RADIUS = 6;     // px, screen-space hit distance for edges/strokes
+
+  var tool = "select";
+  var selection = null;      // { type: 'poly'|'line'|'label', index, vertex }
+  var dragMode = null;       // active drag/edit session
+  var panDrag = null;
+  var floatDrag = null;      // floating panel reposition drag
+  var draft = null;          // { kind:'poly'|'lineSolid'|'lineDashed', pts:[...] }
+  var cursorWorld = null;
+  var spaceHeld = false;
+  var justPanned = false;
+  var fieldArmed = false;
+  var bgMode = "legion";
+
+  var TOOL_LABELS = {
+    select: "Select", moveVertex: "Move vertex", addVertex: "Add vertex", deleteVertex: "Delete vertex",
+    moveFeature: "Move feature", deleteFeature: "Delete feature",
+    poly: "Draw polygon", lineSolid: "Draw solid line", lineDashed: "Draw dashed line",
+    label: "Add label", pan: "Pan"
+  };
+
+  // ============================== dom ==============================
+  var els = {};
+  function cacheDom() {
+    els.toolbar = document.getElementById("toolbar");
+    els.bgSelect = document.getElementById("bgSelect");
+    els.loadBtn = document.getElementById("loadBtn");
+    els.saveBtn = document.getElementById("saveBtn");
+    els.modMarker = document.getElementById("modMarker");
+    els.saveStatus = document.getElementById("saveStatus");
+    els.downloadBtn = document.getElementById("downloadBtn");
+    els.undoBtn = document.getElementById("undoBtn");
+    els.redoBtn = document.getElementById("redoBtn");
+    els.deleteBtn = document.getElementById("deleteBtn");
+    els.selPanel = document.getElementById("selPanel");
+    els.selSummary = document.getElementById("selSummary");
+    els.labelFields = document.getElementById("labelFields");
+    els.lineFields = document.getElementById("lineFields");
+    els.nameInput = document.getElementById("nameInput");
+    els.angleInput = document.getElementById("angleInput");
+    els.kindSelect = document.getElementById("kindSelect");
+    els.classSolidBtn = document.getElementById("classSolidBtn");
+    els.classDashedBtn = document.getElementById("classDashedBtn");
+    els.mapWrap = document.getElementById("mapWrap");
+    els.bgCanvas = document.getElementById("bgCanvas");
+    els.fgCanvas = document.getElementById("fgCanvas");
+    els.status = document.getElementById("status");
+    els.floatPanel = document.getElementById("floatPanel");
+    els.floatHeader = document.getElementById("floatHeader");
+  }
+  var mapWrap, bgCanvas, fgCanvas;
+
+  // ============================== world <-> geo ==============================
+  function worldToLonLat(x, y) {
+    return { lon: 84.52 + x / 36169 * 1.08, lat: 28.45 - y / 28011 * 0.75 };
+  }
+
+  // ============================== history ==============================
+  function pushHistory() {
+    undoStack.push(JSON.stringify(data));
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack.length = 0;
+    modified = true;
+    updateModifiedMarker();
+    syncUndoRedoButtons();
+  }
+  // undo/redo swap the whole data object; a selection that still points at a feature that
+  // exists in the restored snapshot is kept (this is what lets you drag/undo/keep-editing the
+  // same feature across mode switches). A stale vertex index is cleared since positions may
+  // have shifted; a selection whose feature no longer exists (an add/delete was undone) is cleared.
+  function keepSelectionIfValid() {
+    if (!selection) return;
+    var arr = selection.type === "poly" ? data.polys : selection.type === "line" ? data.lines : data.labels;
+    if (!arr || selection.index < 0 || selection.index >= arr.length) selection = null;
+    else selection.vertex = null;
+  }
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(data));
+    data = JSON.parse(undoStack.pop());
+    dragMode = null; draft = null;
+    keepSelectionIfValid();
+    modified = true; updateModifiedMarker(); syncUndoRedoButtons();
+    refreshSelectionFields(); markDirty();
+  }
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(data));
+    data = JSON.parse(redoStack.pop());
+    dragMode = null; draft = null;
+    keepSelectionIfValid();
+    modified = true; updateModifiedMarker(); syncUndoRedoButtons();
+    refreshSelectionFields(); markDirty();
+  }
+  function updateModifiedMarker() {
+    els.modMarker.style.visibility = modified ? "visible" : "hidden";
+  }
+  function syncUndoRedoButtons() {
+    var canUndo = undoStack.length > 0, canRedo = redoStack.length > 0;
+    document.querySelectorAll(".undoBtnCls").forEach(function (b) { b.disabled = !canUndo; });
+    document.querySelectorAll(".redoBtnCls").forEach(function (b) { b.disabled = !canRedo; });
+  }
+
+  // ============================== render loop ==============================
+  var dirty = true, rafScheduled = false;
+  function markDirty() { dirty = true; scheduleRender(); }
+  function scheduleRender() {
+    if (rafScheduled) return;
+    rafScheduled = true;
+    requestAnimationFrame(function () {
+      rafScheduled = false;
+      if (dirty) { dirty = false; render(); }
+    });
+  }
+
+  function resizeCanvases() {
+    var dpr = window.devicePixelRatio || 1;
+    var w = mapWrap.clientWidth, h = mapWrap.clientHeight;
+    [bgCanvas, fgCanvas].forEach(function (c) {
+      var nw = Math.round(w * dpr), nh = Math.round(h * dpr);
+      if (c.width !== nw || c.height !== nh) {
+        c.width = nw; c.height = nh;
+        c.style.width = w + "px"; c.style.height = h + "px";
+      }
+    });
+  }
+
+  function render() {
+    resizeCanvases();
+    var dpr = window.devicePixelRatio || 1;
+    var w = mapWrap.clientWidth, h = mapWrap.clientHeight;
+    var bctx = bgCanvas.getContext("2d");
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bctx.clearRect(0, 0, w, h);
+    renderBackground(bctx, w, h);
+    var fctx = fgCanvas.getContext("2d");
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fctx.clearRect(0, 0, w, h);
+    renderOverlay(fctx, w, h);
+  }
+
+  // ============================== tile layer / backgrounds ==============================
+  function makeTileLayer(dir) {
+    var loaded = false, loading = false, levels = [], overview = null;
+    var cache = {};
+    function img(src) {
+      var im = cache[src];
+      if (!im) {
+        im = new Image(); im.decoding = "async";
+        im.onload = markDirty;
+        cache[src] = im; im.src = src;
+      }
+      return im;
+    }
+    function ensure() {
+      if (loaded || loading) return;
+      loading = true;
+      fetch(dir + "/index.json").then(function (r) { return r.json(); }).then(function (j) {
+        (j.levels || []).forEach(function (L) {
+          var keySet = {}; (L.tiles || []).forEach(function (k) { keySet[k] = true; });
+          levels.push({ F: L.F, T: L.T, dir: dir + "/" + L.dir, minScale: L.minScale || 0, keySet: keySet });
+        });
+        if (j.overview) {
+          var o = j.overview;
+          overview = { img: img(dir + "/" + o.src), left: o.left, top: o.top, width: o.width, height: o.height };
+        }
+        loaded = true; markDirty();
+      }).catch(function () { loading = false; });
+    }
+    function draw(ctx) {
+      ensure();
+      if (overview && overview.img.complete && overview.img.naturalWidth) {
+        ctx.drawImage(overview.img,
+          overview.left * view.scale + view.panX, overview.top * view.scale + view.panY,
+          overview.width * view.scale, overview.height * view.scale);
+      }
+      if (!loaded) return;
+      var narrow = window.innerWidth < 640;
+      var active = levels.filter(function (L) { return view.scale >= L.minScale && !(narrow && L.F === 8); });
+      active.sort(function (a, b) { return a.F - b.F; });
+      var w = mapWrap.clientWidth, h = mapWrap.clientHeight;
+      active.forEach(function (L) {
+        var T = L.T;
+        var wx0 = -view.panX / view.scale, wy0 = -view.panY / view.scale;
+        var wx1 = (w - view.panX) / view.scale, wy1 = (h - view.panY) / view.scale;
+        var tx0 = Math.floor(wx0 / T), tx1 = Math.floor(wx1 / T);
+        var ty0 = Math.floor(wy0 / T), ty1 = Math.floor(wy1 / T);
+        for (var tx = tx0; tx <= tx1; tx++) {
+          for (var ty = ty0; ty <= ty1; ty++) {
+            var key = tx + "_" + ty;
+            if (!L.keySet[key]) continue;
+            var im = img(L.dir + "/" + key + ".webp");
+            if (im.complete && im.naturalWidth) {
+              ctx.drawImage(im, tx * T * view.scale + view.panX, ty * T * view.scale + view.panY,
+                T * view.scale, T * view.scale);
+            }
+          }
+        }
+      });
+    }
+    return { draw: draw };
+  }
+  var tileLayer = makeTileLayer("assets/trisuli/tiles/vantor_pre");
+  var psImage = null, s2Image = null;
+  function ensureBgImage(which) {
+    if (which === "ps" && !psImage) { psImage = new Image(); psImage.onload = markDirty; psImage.src = "assets/trisuli/pre_ps_sr_20260527.webp"; }
+    if (which === "s2" && !s2Image) { s2Image = new Image(); s2Image.onload = markDirty; s2Image.src = "assets/trisuli/post_s2_20260827.jpg"; }
+  }
+  function renderBackground(ctx, w, h) {
+    ctx.fillStyle = "#05080B"; ctx.fillRect(0, 0, w, h);
+    if (bgMode === "legion") {
+      tileLayer.draw(ctx);
+    } else {
+      ensureBgImage(bgMode);
+      var im = bgMode === "ps" ? psImage : s2Image;
+      if (im && im.complete && im.naturalWidth) {
+        ctx.drawImage(im, BOX.x0 * view.scale + view.panX, BOX.y0 * view.scale + view.panY,
+          BOX.w * view.scale, BOX.h * view.scale);
+      }
+    }
+  }
+  function setBgMode(v) { bgMode = v; ensureBgImage(v); markDirty(); }
+
+  // ============================== overlay render ==============================
+  function renderOverlay(ctx, w, h) {
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    data.polys.forEach(function (p) {
+      if (p.length < 6) return;
+      ctx.moveTo(p[0] * view.scale + view.panX, p[1] * view.scale + view.panY);
+      for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * view.scale + view.panX, p[i + 1] * view.scale + view.panY);
+      ctx.closePath();
+    });
+    ctx.fillStyle = "rgba(0,210,255,0.22)";
+    ctx.fill("evenodd");
+    ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(0,230,255,0.95)";
+    ctx.stroke();
+
+    ctx.lineCap = "round";
+    ["c", "s"].forEach(function (cls) {
+      ctx.beginPath();
+      ctx.lineWidth = cls === "c" ? 1.6 : 1.1;
+      ctx.setLineDash(cls === "c" ? [] : [4, 3]);
+      ctx.strokeStyle = "rgba(0,230,255,0.85)";
+      data.lines.forEach(function (L) {
+        if (L.c !== cls || L.p.length < 4) return;
+        var p = L.p;
+        ctx.moveTo(p[0] * view.scale + view.panX, p[1] * view.scale + view.panY);
+        for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * view.scale + view.panX, p[i + 1] * view.scale + view.panY);
+      });
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    ctx.font = 'italic 600 11px "Source Sans 3", "Segoe UI", sans-serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    data.labels.forEach(function (L) {
+      var sx = L[0] * view.scale + view.panX, sy = L[1] * view.scale + view.panY;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate((L[2] || 0) * Math.PI / 180);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(12,17,22,0.85)";
+      ctx.strokeText(L[3], 0, 0);
+      ctx.fillStyle = "#9BE4FA";
+      ctx.fillText(L[3], 0, 0);
+      ctx.restore();
+    });
+
+    drawSelection(ctx);
+    drawDraft(ctx);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1;
+    ctx.strokeRect(BOX.x0 * view.scale + view.panX, BOX.y0 * view.scale + view.panY, BOX.w * view.scale, BOX.h * view.scale);
+
+    drawScaleBar(ctx, w, h);
+  }
+
+  function drawSelection(ctx) {
+    if (!selection) return;
+    if (selection.type === "poly" || selection.type === "line") {
+      var pts = selection.type === "poly" ? data.polys[selection.index] : (data.lines[selection.index] || {}).p;
+      if (!pts) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0] * view.scale + view.panX, pts[1] * view.scale + view.panY);
+      for (var i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * view.scale + view.panX, pts[i + 1] * view.scale + view.panY);
+      if (selection.type === "poly") ctx.closePath();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = "#FFFFFF"; ctx.stroke();
+      if (tool === "addVertex") {
+        var closedMP = selection.type === "poly";
+        var nSeg = segCount(pts, closedMP);
+        ctx.fillStyle = "rgba(12,17,22,0.85)";
+        ctx.strokeStyle = "#5FB3C4"; ctx.lineWidth = 1.3;
+        for (var s = 0; s < nSeg; s++) {
+          var v = segVerts(pts, s, closedMP);
+          var mx = (v[0] + v[2]) / 2 * view.scale + view.panX, my = (v[1] + v[3]) / 2 * view.scale + view.panY;
+          ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+      }
+      var hs = VERTEX_HANDLE_SIZE / 2;
+      for (var vi = 0; vi * 2 < pts.length; vi++) {
+        var hx = pts[vi * 2] * view.scale + view.panX, hy = pts[vi * 2 + 1] * view.scale + view.panY;
+        var sel = selection.vertex === vi;
+        ctx.fillStyle = sel ? "#FFE066" : "#FFFFFF";
+        ctx.strokeStyle = "#0C1116"; ctx.lineWidth = 1;
+        ctx.fillRect(hx - hs, hy - hs, hs * 2, hs * 2);
+        ctx.strokeRect(hx - hs, hy - hs, hs * 2, hs * 2);
+      }
+    } else if (selection.type === "label") {
+      var lab = data.labels[selection.index];
+      if (!lab) return;
+      var sx = lab[0] * view.scale + view.panX, sy = lab[1] * view.scale + view.panY;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate((lab[2] || 0) * Math.PI / 180);
+      ctx.font = 'italic 600 11px "Source Sans 3", "Segoe UI", sans-serif';
+      var m = ctx.measureText(lab[3]);
+      var hw = m.width / 2 + 4, hh = 10;
+      ctx.strokeStyle = "#FFE066"; ctx.lineWidth = 1.5;
+      ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
+      ctx.restore();
+    }
+  }
+
+  function drawDraft(ctx) {
+    if (!draft || !draft.pts.length) return;
+    var pts = draft.pts;
+    ctx.beginPath();
+    ctx.moveTo(pts[0] * view.scale + view.panX, pts[1] * view.scale + view.panY);
+    for (var i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * view.scale + view.panX, pts[i + 1] * view.scale + view.panY);
+    if (cursorWorld) ctx.lineTo(cursorWorld.x * view.scale + view.panX, cursorWorld.y * view.scale + view.panY);
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = "#5FB3C4"; ctx.lineWidth = 1.5;
+    ctx.stroke(); ctx.setLineDash([]);
+    for (var j = 0; j < pts.length; j += 2) {
+      var hx = pts[j] * view.scale + view.panX, hy = pts[j + 1] * view.scale + view.panY;
+      ctx.fillStyle = "#5FB3C4";
+      ctx.beginPath(); ctx.arc(hx, hy, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function niceScaleMeters(targetPx) {
+    var mPerPx = MPP / view.scale;
+    var rough = targetPx * mPerPx;
+    if (rough <= 0 || !isFinite(rough)) return 100;
+    var pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+    var candidates = [1, 2, 5, 10].map(function (m) { return m * pow10; });
+    var best = candidates[0], bestDiff = Infinity;
+    candidates.forEach(function (c) { var diff = Math.abs(c - rough); if (diff < bestDiff) { bestDiff = diff; best = c; } });
+    return best;
+  }
+  function drawScaleBar(ctx, w, h) {
+    var meters = niceScaleMeters(100);
+    var px = meters / (MPP / view.scale);
+    var x0 = 16, y0 = h - 24;
+    ctx.strokeStyle = "#E6ECF0"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + px, y0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0, y0 - 4); ctx.lineTo(x0, y0 + 4); ctx.moveTo(x0 + px, y0 - 4); ctx.lineTo(x0 + px, y0 + 4); ctx.stroke();
+    ctx.fillStyle = "#E6ECF0"; ctx.font = "12px sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+    var label = meters >= 1000 ? (meters / 1000) + " km" : meters + " m";
+    ctx.fillText(label, x0, y0 - 6);
+  }
+
+  // ============================== hit-testing ==============================
+  function distToSegment(px, py, ax, ay, bx, by) {
+    var dx = bx - ax, dy = by - ay;
+    var len2 = dx * dx + dy * dy;
+    var t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    var cx = ax + t * dx, cy = ay + t * dy;
+    var ex = px - cx, ey = py - cy;
+    return { dist: Math.sqrt(ex * ex + ey * ey), x: cx, y: cy };
+  }
+  function segCount(pts, closed) { var n = pts.length / 2; return closed ? n : n - 1; }
+  function segVerts(pts, segIndex, closed) {
+    var n = pts.length / 2, i = segIndex, j = (segIndex + 1) % n;
+    return [pts[i * 2], pts[i * 2 + 1], pts[j * 2], pts[j * 2 + 1]];
+  }
+  function nearestSegmentInfo(pts, px, py, closed) {
+    var n = segCount(pts, closed), best = null;
+    for (var s = 0; s < n; s++) {
+      var v = segVerts(pts, s, closed);
+      var r = distToSegment(px, py, v[0], v[1], v[2], v[3]);
+      if (!best || r.dist < best.dist) best = { dist: r.dist, segIndex: s, x: r.x, y: r.y };
+    }
+    return best;
+  }
+  function hitVertexInPts(pts, wx, wy) {
+    var thr = VERTEX_HIT_RADIUS / view.scale, best = -1, bestD = thr;
+    for (var i = 0, n = pts.length / 2; i < n; i++) {
+      var dx = pts[i * 2] - wx, dy = pts[i * 2 + 1] - wy, d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+  function hitMidpointHandle(pts, wx, wy, closed) {
+    var n = segCount(pts, closed), thr = VERTEX_HIT_RADIUS / view.scale, best = -1, bestD = thr;
+    for (var s = 0; s < n; s++) {
+      var v = segVerts(pts, s, closed);
+      var mx = (v[0] + v[2]) / 2, my = (v[1] + v[3]) / 2;
+      var dx = mx - wx, dy = my - wy, d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return best;
+  }
+  function pointInRing(px, py, ring) {
+    var n = ring.length / 2, inside = false;
+    for (var i = 0, j = n - 1; i < n; j = i++) {
+      var xi = ring[i * 2], yi = ring[i * 2 + 1], xj = ring[j * 2], yj = ring[j * 2 + 1];
+      var intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+  function ringBBoxArea(ring) {
+    var minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+    for (var i = 0; i < ring.length; i += 2) {
+      if (ring[i] < minx) minx = ring[i]; if (ring[i] > maxx) maxx = ring[i];
+      if (ring[i + 1] < miny) miny = ring[i + 1]; if (ring[i + 1] > maxy) maxy = ring[i + 1];
+    }
+    return (maxx - minx) * (maxy - miny);
+  }
+  function labelHitTestScreen(lab, sx, sy) {
+    var lsx = lab[0] * view.scale + view.panX, lsy = lab[1] * view.scale + view.panY;
+    var ang = (lab[2] || 0) * Math.PI / 180;
+    var dx = sx - lsx, dy = sy - lsy;
+    var cos = Math.cos(-ang), sin = Math.sin(-ang);
+    var rx = dx * cos - dy * sin, ry = dx * sin + dy * cos;
+    var ctx = fgCanvas.getContext("2d");
+    ctx.font = 'italic 600 11px "Source Sans 3", "Segoe UI", sans-serif';
+    var hw = ctx.measureText(lab[3] || "").width / 2 + 4, hh = 10;
+    return Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+  }
+  function hitTest(wx, wy) {
+    var sx = wx * view.scale + view.panX, sy = wy * view.scale + view.panY;
+    for (var li = data.labels.length - 1; li >= 0; li--) {
+      if (labelHitTestScreen(data.labels[li], sx, sy)) return { type: "label", index: li };
+    }
+    var thr = EDGE_HIT_RADIUS / view.scale, best = null, bestDist = thr;
+    data.lines.forEach(function (L, i) {
+      if (!L.p || L.p.length < 4) return;
+      var info = nearestSegmentInfo(L.p, wx, wy, false);
+      if (info && info.dist < bestDist) { bestDist = info.dist; best = { type: "line", index: i }; }
+    });
+    data.polys.forEach(function (ring, i) {
+      if (!ring || ring.length < 6) return;
+      var info = nearestSegmentInfo(ring, wx, wy, true);
+      if (info && info.dist < bestDist) { bestDist = info.dist; best = { type: "poly", index: i }; }
+    });
+    if (best) return best;
+    var inside = [];
+    data.polys.forEach(function (ring, i) {
+      if (ring && ring.length >= 6 && pointInRing(wx, wy, ring)) inside.push({ index: i, area: ringBBoxArea(ring) });
+    });
+    if (inside.length) {
+      inside.sort(function (a, b) { return a.area - b.area; });
+      return { type: "poly", index: inside[0].index };
+    }
+    return null;
+  }
+
+  // ============================== mutation helpers ==============================
+  function deleteVertex(vi) {
+    if (!selection || selection.type === "label") return;
+    var isPoly = selection.type === "poly";
+    var pts = isPoly ? data.polys[selection.index] : data.lines[selection.index].p;
+    var n = pts.length / 2, minN = isPoly ? 3 : 2;
+    if (n <= minN) { window.alert("Cannot delete: minimum " + minN + " vertices required."); return; }
+    pushHistory();
+    pts.splice(vi * 2, 2);
+    selection.vertex = null;
+    refreshSelectionFields(); markDirty();
+  }
+  // returns false if the deletion was cancelled (large-polygon confirm), true once applied
+  function deleteFeatureAt(type, index) {
+    if (type === "poly") {
+      var ring = data.polys[index];
+      if (ring.length / 2 > 20 && !window.confirm("Delete this polygon (" + (ring.length / 2) + " vertices)?")) return false;
+      pushHistory();
+      data.polys.splice(index, 1);
+    } else if (type === "line") {
+      pushHistory();
+      data.lines.splice(index, 1);
+    } else if (type === "label") {
+      pushHistory();
+      data.labels.splice(index, 1);
+    }
+    return true;
+  }
+  function deleteSelectedFeature() {
+    if (!selection) return;
+    if (deleteFeatureAt(selection.type, selection.index)) {
+      selection = null;
+      refreshSelectionFields(); markDirty();
+    }
+  }
+  function setLineClass(c) {
+    if (!selection || selection.type !== "line") return;
+    var L = data.lines[selection.index];
+    if (L.c === c) return;
+    pushHistory();
+    L.c = c;
+    refreshSelectionFields(); markDirty();
+  }
+
+  // ============================== tools: explicit edit modes ==============================
+  // Each mode has its own mousedown handler. In every mode, a click that doesn't hit something
+  // mode-specific on the CURRENTLY selected feature falls back to plain hit-test selection, so
+  // you can always switch feature by clicking a different one regardless of active mode.
+  function selectedGeom() {
+    if (!selection || selection.type === "label") return null;
+    var pts = selection.type === "poly" ? data.polys[selection.index] : (data.lines[selection.index] || {}).p;
+    return pts || null;
+  }
+  function trySelectFallback(wx, wy) {
+    var hit = hitTest(wx, wy);
+    selection = hit ? { type: hit.type, index: hit.index, vertex: null } : null;
+    refreshSelectionFields(); markDirty();
+  }
+  function doSelectClick(wx, wy) {
+    trySelectFallback(wx, wy);
+  }
+  function doMoveVertexDown(wx, wy) {
+    var pts = selectedGeom();
+    if (pts) {
+      var vi = hitVertexInPts(pts, wx, wy);
+      if (vi >= 0) {
+        selection.vertex = vi;
+        pushHistory();
+        dragMode = { kind: "vertex", pts: pts };
+        refreshSelectionFields();
+        return;
+      }
+    }
+    trySelectFallback(wx, wy);
+  }
+  function doAddVertexDown(wx, wy) {
+    var pts = selectedGeom();
+    if (pts) {
+      var closed = selection.type === "poly";
+      var mp = hitMidpointHandle(pts, wx, wy, closed);
+      if (mp >= 0) {
+        var mv = segVerts(pts, mp, closed);
+        pushHistory();
+        pts.splice((mp + 1) * 2, 0, (mv[0] + mv[2]) / 2, (mv[1] + mv[3]) / 2);
+        selection.vertex = mp + 1;
+        refreshSelectionFields(); markDirty();
+        return;
+      }
+      var seg = nearestSegmentInfo(pts, wx, wy, closed);
+      if (seg && seg.dist <= EDGE_HIT_RADIUS / view.scale) {
+        pushHistory();
+        pts.splice((seg.segIndex + 1) * 2, 0, seg.x, seg.y);
+        selection.vertex = seg.segIndex + 1;
+        refreshSelectionFields(); markDirty();
+        return;
+      }
+    }
+    trySelectFallback(wx, wy);
+  }
+  function doDeleteVertexDown(wx, wy) {
+    var pts = selectedGeom();
+    if (pts) {
+      var vi = hitVertexInPts(pts, wx, wy);
+      if (vi >= 0) { deleteVertex(vi); return; }
+    }
+    trySelectFallback(wx, wy);
+  }
+  function doMoveFeatureDown(sx, sy, wx, wy) {
+    if (selection && selection.type === "label") {
+      var lab = data.labels[selection.index];
+      if (lab && labelHitTestScreen(lab, sx, sy)) {
+        pushHistory();
+        dragMode = { kind: "moveLabel", lab: lab, startWX: wx, startWY: wy, orig: [lab[0], lab[1]] };
+        return;
+      }
+    } else {
+      var pts = selectedGeom();
+      if (pts) {
+        var closed = selection.type === "poly";
+        var seg = nearestSegmentInfo(pts, wx, wy, closed);
+        var onEdge = seg && seg.dist <= EDGE_HIT_RADIUS / view.scale;
+        var onInside = closed && pointInRing(wx, wy, pts);
+        if (onEdge || onInside) {
+          pushHistory();
+          dragMode = { kind: "moveFeature", pts: pts, startWX: wx, startWY: wy, orig: pts.slice() };
+          return;
+        }
+      }
+    }
+    trySelectFallback(wx, wy);
+  }
+  function doDeleteFeatureDown(wx, wy) {
+    var hit = hitTest(wx, wy);
+    if (!hit) return;
+    if (deleteFeatureAt(hit.type, hit.index)) {
+      selection = null;
+      refreshSelectionFields(); markDirty();
+    }
+  }
+  function handleDragMove(wx, wy) {
+    var d = dragMode;
+    if (d.kind === "vertex") {
+      d.pts[selection.vertex * 2] = wx; d.pts[selection.vertex * 2 + 1] = wy;
+    } else if (d.kind === "moveFeature") {
+      var dx = wx - d.startWX, dy = wy - d.startWY;
+      for (var i = 0; i < d.pts.length; i += 2) { d.pts[i] = d.orig[i] + dx; d.pts[i + 1] = d.orig[i + 1] + dy; }
+    } else if (d.kind === "moveLabel") {
+      var ddx = wx - d.startWX, ddy = wy - d.startWY;
+      d.lab[0] = d.orig[0] + ddx; d.lab[1] = d.orig[1] + ddy;
+    }
+  }
+  function finalizeDragMode() {
+    if (!dragMode) return;
+    refreshSelectionFields();
+  }
+
+  // ============================== tools: drawing ==============================
+  function finishDraft() {
+    if (!draft) return;
+    var pts = draft.pts;
+    if (draft.kind === "poly") {
+      if (pts.length < 6) { draft = null; markDirty(); return; }
+      pushHistory();
+      data.polys.push(pts.slice());
+      selection = { type: "poly", index: data.polys.length - 1, vertex: null };
+    } else {
+      if (pts.length < 4) { draft = null; markDirty(); return; }
+      pushHistory();
+      data.lines.push({ c: draft.kind === "lineSolid" ? "c" : "s", p: pts.slice() });
+      selection = { type: "line", index: data.lines.length - 1, vertex: null };
+    }
+    draft = null;
+    setTool("select");
+    refreshSelectionFields(); markDirty();
+  }
+
+  // ============================== toolbar / field wiring ==============================
+  function setTool(name) {
+    if (tool === name && name !== "select") { /* allow reselecting select */ }
+    tool = name;
+    draft = null;
+    dragMode = null;
+    document.querySelectorAll(".toolbtn[data-tool]").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.tool === name);
+    });
+    mapWrap.style.cursor = name === "pan" ? "grab" : (name === "select" ? "default" : "crosshair");
+    updateStatus();
+    markDirty();
+  }
+
+  function refreshSelectionFields() {
+    if (!selection) {
+      els.selPanel.hidden = true;
+      updateStatus();
+      return;
+    }
+    els.selPanel.hidden = false;
+    if (selection.type === "poly") {
+      var ring = data.polys[selection.index];
+      els.selSummary.textContent = "Polygon #" + selection.index + " (" + (ring.length / 2) + " pts)";
+      els.labelFields.hidden = true; els.lineFields.hidden = true;
+    } else if (selection.type === "line") {
+      var L = data.lines[selection.index];
+      els.selSummary.textContent = "Line #" + selection.index + " (" + (L.c === "c" ? "solid" : "dashed") + ", " + (L.p.length / 2) + " pts)";
+      els.lineFields.hidden = false; els.labelFields.hidden = true;
+      els.classSolidBtn.classList.toggle("active", L.c === "c");
+      els.classDashedBtn.classList.toggle("active", L.c === "s");
+    } else if (selection.type === "label") {
+      var lab = data.labels[selection.index];
+      els.selSummary.textContent = 'Label "' + lab[3] + '" (' + lab[4] + ", " + lab[2] + "°)";
+      els.labelFields.hidden = false; els.lineFields.hidden = true;
+      if (document.activeElement !== els.nameInput) els.nameInput.value = lab[3];
+      if (document.activeElement !== els.angleInput) els.angleInput.value = lab[2];
+      els.kindSelect.value = lab[4];
+    }
+    updateStatus();
+  }
+  function armFieldHistory() { fieldArmed = true; }
+  function fireFieldHistory() { if (fieldArmed) { pushHistory(); fieldArmed = false; } }
+  function applyLabelField() {
+    if (!selection || selection.type !== "label") return;
+    var lab = data.labels[selection.index];
+    lab[3] = els.nameInput.value;
+    var a = parseFloat(els.angleInput.value);
+    if (isNaN(a)) a = 0;
+    a = Math.max(-90, Math.min(90, a));
+    lab[2] = a;
+    lab[4] = els.kindSelect.value;
+    markDirty();
+  }
+
+  function updateStatus() {
+    var parts = [];
+    if (cursorWorld) {
+      var ll = worldToLonLat(cursorWorld.x, cursorWorld.y);
+      parts.push("lon " + ll.lon.toFixed(5) + ", lat " + ll.lat.toFixed(5));
+      parts.push("px " + cursorWorld.x.toFixed(1) + ", " + cursorWorld.y.toFixed(1));
+    }
+    parts.push("tool: " + TOOL_LABELS[tool]);
+    parts.push(selection ? els.selSummary.textContent : "no selection");
+    els.status.textContent = parts.join("   •   ");
+  }
+
+  // ============================== view / navigation ==============================
+  function fitView() {
+    var margin = 20;
+    var availW = mapWrap.clientWidth - margin * 2;
+    var availH = mapWrap.clientHeight - margin * 2;
+    var s = Math.min(availW / BOX.w, availH / BOX.h);
+    view.scale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, s));
+    view.panX = margin + (availW - BOX.w * view.scale) / 2 - BOX.x0 * view.scale;
+    view.panY = margin + (availH - BOX.h * view.scale) / 2 - BOX.y0 * view.scale;
+  }
+
+  // ============================== io ==============================
+  function downloadJSON(text) {
+    var blob = new Blob([text], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "rivers.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function nowTimeStr() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function doSave() {
+    var body = JSON.stringify(data);
+    els.saveStatus.textContent = "Saving…";
+    fetch("/save/rivers", { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function () {
+        modified = false; updateModifiedMarker();
+        els.saveStatus.textContent = "Saved ✓ " + nowTimeStr();
+      })
+      .catch(function (err) {
+        downloadJSON(body);
+        els.saveStatus.textContent = "Save failed (" + err.message + ") — downloaded rivers.json instead";
+      });
+  }
+  function loadRivers() {
+    fetch("assets/trisuli/rivers.json?v=" + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        data = j;
+        if (!Array.isArray(data.polys)) data.polys = [];
+        if (!Array.isArray(data.lines)) data.lines = [];
+        if (!Array.isArray(data.labels)) data.labels = [];
+        undoStack = []; redoStack = []; modified = false; selection = null;
+        updateModifiedMarker(); refreshSelectionFields();
+        els.saveStatus.textContent = "Loaded";
+        markDirty();
+      })
+      .catch(function (err) {
+        els.saveStatus.textContent = "Load failed: " + err.message;
+      });
+  }
+
+  // ============================== events ==============================
+  function isPanTrigger(e) { return tool === "pan" || spaceHeld || e.button === 1 || e.button === 2; }
+
+  function bindEvents() {
+    els.bgSelect.addEventListener("change", function () { setBgMode(this.value); });
+    els.loadBtn.addEventListener("click", function () {
+      if (modified && !window.confirm("Discard unsaved changes and reload?")) return;
+      loadRivers();
+    });
+    els.saveBtn.addEventListener("click", doSave);
+    els.downloadBtn.addEventListener("click", function () {
+      downloadJSON(JSON.stringify(data));
+      els.saveStatus.textContent = "Downloaded";
+    });
+    document.querySelectorAll(".undoBtnCls").forEach(function (b) { b.addEventListener("click", undo); });
+    document.querySelectorAll(".redoBtnCls").forEach(function (b) { b.addEventListener("click", redo); });
+    els.deleteBtn.addEventListener("click", deleteSelectedFeature);
+    document.querySelectorAll(".toolbtn[data-tool]").forEach(function (b) {
+      b.addEventListener("click", function () { setTool(this.dataset.tool); });
+    });
+    els.classSolidBtn.addEventListener("click", function () { setLineClass("c"); });
+    els.classDashedBtn.addEventListener("click", function () { setLineClass("s"); });
+    els.nameInput.addEventListener("focus", armFieldHistory);
+    els.nameInput.addEventListener("input", function () { fireFieldHistory(); applyLabelField(); refreshLabelSummaryOnly(); });
+    els.angleInput.addEventListener("focus", armFieldHistory);
+    els.angleInput.addEventListener("input", function () { fireFieldHistory(); applyLabelField(); refreshLabelSummaryOnly(); });
+    els.kindSelect.addEventListener("focus", armFieldHistory);
+    els.kindSelect.addEventListener("change", function () { fireFieldHistory(); applyLabelField(); refreshLabelSummaryOnly(); });
+
+    window.addEventListener("beforeunload", function (e) {
+      if (modified) { e.preventDefault(); e.returnValue = ""; }
+    });
+    window.addEventListener("resize", function () { markDirty(); });
+
+    mapWrap.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    mapWrap.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      var rect = mapWrap.getBoundingClientRect();
+      var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      var wx = (sx - view.panX) / view.scale, wy = (sy - view.panY) / view.scale;
+      var factor = Math.pow(1.0015, -e.deltaY);
+      var ns = Math.max(SCALE_MIN, Math.min(SCALE_MAX, view.scale * factor));
+      view.panX = sx - wx * ns; view.panY = sy - wy * ns; view.scale = ns;
+      markDirty(); updateStatus();
+    }, { passive: false });
+
+    mapWrap.addEventListener("mousedown", function (e) {
+      var rect = mapWrap.getBoundingClientRect();
+      var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      if (isPanTrigger(e)) {
+        e.preventDefault();
+        panDrag = { startSX: sx, startSY: sy, startPanX: view.panX, startPanY: view.panY };
+        mapWrap.style.cursor = "grabbing";
+        return;
+      }
+      if (e.button !== 0) return;
+      var wx = (sx - view.panX) / view.scale, wy = (sy - view.panY) / view.scale;
+      switch (tool) {
+        case "select": doSelectClick(wx, wy); break;
+        case "moveVertex": doMoveVertexDown(wx, wy); break;
+        case "addVertex": doAddVertexDown(wx, wy); break;
+        case "deleteVertex": doDeleteVertexDown(wx, wy); break;
+        case "moveFeature": doMoveFeatureDown(sx, sy, wx, wy); break;
+        case "deleteFeature": doDeleteFeatureDown(wx, wy); break;
+      }
+    });
+    els.floatHeader.addEventListener("mousedown", function (e) {
+      var panelRect = els.floatPanel.getBoundingClientRect();
+      var wrapRect = mapWrap.getBoundingClientRect();
+      floatDrag = {
+        startX: e.clientX, startY: e.clientY,
+        startLeft: panelRect.left - wrapRect.left, startTop: panelRect.top - wrapRect.top
+      };
+      e.preventDefault();
+    });
+    // stop panel interactions (drag / button clicks) from also reaching the map underneath
+    ["mousedown", "click", "dblclick", "wheel"].forEach(function (evt) {
+      els.floatPanel.addEventListener(evt, function (e) { e.stopPropagation(); });
+    });
+    window.addEventListener("mousemove", function (e) {
+      if (floatDrag) {
+        var nx = floatDrag.startLeft + (e.clientX - floatDrag.startX);
+        var ny = floatDrag.startTop + (e.clientY - floatDrag.startY);
+        nx = Math.max(0, Math.min(mapWrap.clientWidth - els.floatPanel.offsetWidth, nx));
+        ny = Math.max(0, Math.min(mapWrap.clientHeight - els.floatPanel.offsetHeight, ny));
+        els.floatPanel.style.left = nx + "px"; els.floatPanel.style.top = ny + "px";
+        return;
+      }
+      var rect = mapWrap.getBoundingClientRect();
+      var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      var wx = (sx - view.panX) / view.scale, wy = (sy - view.panY) / view.scale;
+      cursorWorld = { x: wx, y: wy };
+      if (panDrag) {
+        view.panX = panDrag.startPanX + (sx - panDrag.startSX);
+        view.panY = panDrag.startPanY + (sy - panDrag.startSY);
+        justPanned = true;
+        markDirty(); return;
+      }
+      if (dragMode) { handleDragMove(wx, wy); markDirty(); return; }
+      if (draft) { markDirty(); }
+      updateStatus();
+    });
+    window.addEventListener("mouseup", function () {
+      if (floatDrag) { floatDrag = null; return; }
+      if (panDrag) {
+        panDrag = null;
+        mapWrap.style.cursor = tool === "pan" ? "grab" : (tool === "select" ? "default" : "crosshair");
+        setTimeout(function () { justPanned = false; }, 0);
+        return;
+      }
+      if (dragMode) { finalizeDragMode(); dragMode = null; markDirty(); }
+    });
+    mapWrap.addEventListener("click", function (e) {
+      if (justPanned) { justPanned = false; return; }
+      if (tool !== "poly" && tool !== "lineSolid" && tool !== "lineDashed" && tool !== "label") return;
+      var rect = mapWrap.getBoundingClientRect();
+      var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      var wx = (sx - view.panX) / view.scale, wy = (sy - view.panY) / view.scale;
+      if (tool === "poly" || tool === "lineSolid" || tool === "lineDashed") {
+        if (!draft) draft = { kind: tool, pts: [] };
+        draft.pts.push(wx, wy);
+        markDirty();
+      } else if (tool === "label") {
+        var name = window.prompt("Label name:");
+        if (name && name.trim()) {
+          pushHistory();
+          data.labels.push([wx, wy, 0, name.trim(), "c"]);
+          selection = { type: "label", index: data.labels.length - 1, vertex: null };
+          setTool("select");
+          refreshSelectionFields();
+        }
+        markDirty();
+      }
+    });
+    mapWrap.addEventListener("dblclick", function (e) {
+      if (!draft) return;
+      e.preventDefault();
+      var pts = draft.pts;
+      if (pts.length >= 4) {
+        var n = pts.length;
+        var dx = pts[n - 2] - pts[n - 4], dy = pts[n - 1] - pts[n - 3];
+        if (Math.sqrt(dx * dx + dy * dy) * view.scale < 4) pts.length -= 2;
+      }
+      finishDraft();
+    });
+
+    window.addEventListener("keydown", function (e) {
+      var tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      switch (e.key) {
+        case "1": setTool("select"); break;
+        case "2": setTool("moveVertex"); break;
+        case "3": setTool("addVertex"); break;
+        case "4": setTool("deleteVertex"); break;
+        case "5": setTool("moveFeature"); break;
+        case "6": setTool("deleteFeature"); break;
+        case "7": setTool("poly"); break;
+        case "8": setTool("lineSolid"); break;
+        case "9": setTool("lineDashed"); break;
+        case "0": setTool("label"); break;
+        case "p": case "P": setTool("pan"); break;
+        case "Delete": e.preventDefault(); deleteSelectedFeature(); break;
+        case "Backspace":
+          e.preventDefault();
+          if (selection && selection.vertex != null) deleteVertex(selection.vertex);
+          break;
+        case "Escape":
+          if (draft) { draft = null; markDirty(); }
+          else { selection = null; refreshSelectionFields(); markDirty(); }
+          break;
+        case "Enter": if (draft) finishDraft(); break;
+        case " ": spaceHeld = true; mapWrap.style.cursor = "grab"; e.preventDefault(); break;
+      }
+    });
+    window.addEventListener("keyup", function (e) {
+      if (e.key === " ") {
+        spaceHeld = false;
+        mapWrap.style.cursor = tool === "pan" ? "grab" : (tool === "select" ? "default" : "crosshair");
+      }
+    });
+  }
+  function refreshLabelSummaryOnly() {
+    if (selection && selection.type === "label") {
+      var lab = data.labels[selection.index];
+      els.selSummary.textContent = 'Label "' + lab[3] + '" (' + lab[4] + ", " + lab[2] + "°)";
+    }
+    updateStatus();
+  }
+
+  // ============================== debug hook ==============================
+  window.__editor = {
+    getData: function () { return JSON.parse(JSON.stringify(data)); },
+    getState: function () {
+      return {
+        tool: tool,
+        selection: selection ? { type: selection.type, index: selection.index, vertex: selection.vertex } : null,
+        scale: view.scale, panX: view.panX, panY: view.panY,
+        modified: modified,
+        undoDepth: undoStack.length, redoDepth: redoStack.length
+      };
+    }
+  };
+
+  // ============================== init ==============================
+  function init() {
+    cacheDom();
+    mapWrap = els.mapWrap; bgCanvas = els.bgCanvas; fgCanvas = els.fgCanvas;
+    bindEvents();
+    fitView();
+    loadRivers();
+    setTool("select");
+    updateStatus();
+    scheduleRender();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
