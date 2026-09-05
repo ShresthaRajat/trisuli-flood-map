@@ -28,26 +28,6 @@
     html, body { height: 100dvh; }
   }
   #controls { flex: none; }
-  /* fixed top bar shared by index.html and full-map.html; body padding keeps the stage below it */
-  :root { --topbar-h: 48px; }
-  body { padding-top: var(--topbar-h); box-sizing: border-box; }
-  #topbar {
-    position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); z-index: 30; box-sizing: border-box;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1rem;
-    background: var(--panel); border-bottom: 1px solid var(--line);
-  }
-  #topbar h1 { margin: 0; font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #topbar a.nav {
-    flex: none; text-decoration: none; background: #1D2831; color: var(--ink); border: 1px solid var(--line);
-    border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.85rem; line-height: 1.5;
-  }
-  #topbar a.nav:hover { border-color: var(--accent); }
-  #topbar a.nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  @media (max-width: 640px) {
-    #topbar { padding: 0 0.6rem; }
-    #topbar h1 { font-size: 0.9rem; }
-    #topbar a.nav { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
-  }
   #stage {
     position: relative; overflow: hidden; flex: 1; min-height: 0;
     background: #05080B; touch-action: none; cursor: grab; user-select: none;
@@ -56,11 +36,8 @@
   .layer { position: absolute; inset: 0; overflow: hidden; }
   .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
   .world { background: #05080B; }
-  #contourCanvas, #riverCanvas, #floodCanvas, #roadCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
-  #focusCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  #contourCanvas, #riverCanvas, #floodCanvas, #roadCanvas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
   .world img { display: block; position: absolute; image-rendering: auto; pointer-events: none; -webkit-user-drag: none; }
-  .tiles { position: absolute; left: 0; top: 0; }
-  .tiles img { position: absolute; }
   .tag {
     position: absolute; top: 10px; padding: 2px 10px; border-radius: 4px;
     font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
@@ -122,54 +99,19 @@
     padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
     background: var(--panel); border-top: 1px solid var(--line);
   }
-  button, .seg button, #postSrc {
+  button, .seg button {
     background: #1D2831; color: var(--ink); border: 1px solid var(--line);
     border-radius: 6px; padding: 0.3rem 0.7rem; font: inherit; font-size: 0.85rem; cursor: pointer;
   }
-  button:hover, #postSrc:hover { border-color: var(--accent); }
-  button:focus-visible, #postSrc:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .seg { display: inline-flex; border-radius: 6px; overflow: hidden; }
   .seg button { border-radius: 0; border-right-width: 0; }
   .seg button:first-child { border-radius: 6px 0 0 6px; }
   .seg button:last-child { border-radius: 0 6px 6px 0; border-right-width: 1px; }
   .seg button.on { background: var(--accent); color: #08222A; border-color: var(--accent); font-weight: 600; }
-  #postSrcLabel { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); }
-  #coords {
-    position: absolute; left: 10px; bottom: 10px; z-index: 4; pointer-events: none;
-    font-family: ui-monospace, monospace; font-size: 0.72rem; font-weight: 600; color: var(--ink);
-    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-  }
-  .muted { color: var(--muted); }
-  /* --- left side panel --- */
-  #main { display: flex; flex: 1; min-height: 0; position: relative; }
-  #panel {
-    width: 340px; flex: none; box-sizing: border-box; background: var(--panel);
-    border-right: 1px solid var(--line); overflow-y: auto; padding: 1rem;
-    font-size: 0.9rem; color: var(--ink);
-    transition: width 250ms ease, padding 250ms ease;
-  }
-  #panel.collapsed { width: 0; padding: 0; overflow: hidden; border-right: none; }
-  #panel h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
-  #panel h3 {
-    margin: 1.1rem 0 0.4rem; font-size: 0.8rem; font-weight: 600;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  #placeList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  #placeList li { margin: 0; }
-  button.place { display: block; width: 100%; text-align: left; }
-  button.place.on { background: var(--accent); color: #08222A; border-color: var(--accent); font-weight: 600; }
-  button.place .outside-note { font-weight: 400; opacity: 0.75; }
-  #placeCaption { margin: 0.6rem 0 0; padding: 0; font-size: 0.85rem; color: var(--muted); }
-  #panelToggle {
-    position: absolute; top: 46px; left: 340px; z-index: 6;   /* below the Pre tag */
-    background: #1D2831; color: var(--ink); border: 1px solid var(--line); border-left: none;
-    border-radius: 0 6px 6px 0; padding: 0.3rem 0.5rem; font: inherit; font-size: 0.85rem;
-    cursor: pointer; transition: left 250ms ease;
-  }
-  #panelToggle:hover { border-color: var(--accent); }
-  #panelToggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  #panel.collapsed ~ #panelToggle { left: 0; border-left: 1px solid var(--line); }
-  #lastUpdated { margin: 1.2rem 0 0; }
+  #coords { margin-left: auto; font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--muted); }
+  #srcNotes { position: relative; }
   #srcNotes summary {
     cursor: pointer; display: inline-block; padding: 0.3rem 0.7rem;
     background: #1D2831; border: 1px solid var(--line); border-radius: 6px;
@@ -180,77 +122,41 @@
   #srcNotes[open] summary::before { content: "▾ "; }
   #srcNotes summary:hover { border-color: var(--accent); }
   #srcNotes p {
-    position: static; width: auto; margin: 0; padding: 0.6rem 0 0;
-    background: none; border: none; box-shadow: none;
+    position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 20;
+    width: min(64ch, 82vw); margin: 0; padding: 0.8rem 1rem;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.55);
     font-size: 0.82rem; color: var(--muted);
   }
   #srcNotes a { color: var(--accent); }
   @media (max-width: 640px) {
     body { font-size: 14px; }
     #controls { gap: 0.35rem; padding-left: 0.6rem; padding-right: 0.6rem; }
-    button, .seg button, #srcNotes summary, #postSrc { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
-    #postSrcLabel { font-size: 0.76rem; }
+    button, .seg button, #srcNotes summary { padding: 0.28rem 0.5rem; font-size: 0.76rem; }
     #coords { display: none; }
-    #panel {
-      position: absolute; left: 0; top: 0; bottom: 0; width: min(85vw, 340px);
-      z-index: 7; box-shadow: 0 6px 24px rgba(0,0,0,0.55);
-    }
-    #panel.collapsed { width: 0; box-shadow: none; }
-    #panelToggle { left: min(85vw, 340px); }
-    #panel.collapsed ~ #panelToggle { left: 0; }
   }
 </style>
 
-<header id="topbar">
-  <h1>Trisuli Bazar flood, 26 Aug 2026</h1>
-  <a class="nav" href="full-map.html">Open full corridor map</a>
-</header>
-
-<div id="main">
-<aside id="panel">
-  <h2>Trisuli Bazar flood, 26 Aug 2026</h2>
-  <p>On 26 August 2026 a section of glacier collapsed above the Lhende Khola in the Tibetan headwaters of the Bhote Koshi. The resulting debris flood swept down the Bhote Koshi and Trisuli valleys through Rasuwagadhi, Syabrubesi and Betrawati to Trisuli Bazar and beyond. As of 1 September the NDRRMA toll stood at 987 dead and 3,916 missing.</p>
-  <h3>Places</h3>
-  <ul id="placeList"></ul>
-  <p id="placeCaption" hidden></p>
-  <details id="srcNotes">
-    <summary>Imagery sources &amp; notes</summary>
-    <p><span id="legend">
-      <span><i class="dot d-origin"></i>Glacier-collapse origin</span>
-      <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
-      <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
-      <span><i class="dot d-city"></i>Major town / city (reference)</span>
-    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT), 31 Aug (SkySat, 0.65 m, Trisuli Bazar reach) or 1 Sep (Pelican, 0.56 m, upper valley). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (rendered here from the 16-bit surface-reflectance product with a percentile stretch, north-up at ~2.9 m) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. The 31 Aug option is a pair of SkySat collects (~15:10 NPT, 0.65 m GSD) from Betrawati down through Trisuli Bazar and Bidur — the only sub-metre view of the downstream reach; the southern frame is largely clear over the river and town while the northern frame over Battar and Betrawati is mostly cloud. The collect's own georeferencing sat ~500 m east and ~800 m south of the map grid, so each frame has been re-registered here with a thin-plate-spline warp through ~80–200 tie points matched to the pre-event PlanetScope scene (residual a few metres over clear ground; the collect was taken ~9° off-nadir, so a few metres of terrain-related shift can remain on steep slopes). The 28 Aug · Trisuli Bazar option is a Vantor (formerly Maxar) WorldView-2 scene (~08:52 NPT, 0.54 m GSD) covering the whole focus box under broken cloud, and the pre side carries a Vantor Legion scene from 5 Feb 2026 (~13:02 NPT, 0.39 m GSD, cloud-free) over the western three quarters of the box on top of the PlanetScope image; both come from <a href="https://openaerialmap.org">OpenAerialMap</a> (© 2026 Vantor via OpenAerialMap, CC-BY 4.0), were registered to the PlanetScope frame like the SkySat, and stream as tiles at ~0.37–0.49 m. The 1 Sep option is three Pelican scenes (~10:51 NPT, 0.56 m GSD) from Syabrubesi to Rasuwagadhi, re-imaging the 27 Aug Pelican footprint, 47–84 % cloud. Both are rendered at ~0.73 m and streamed as map tiles fetched only for the area in view; outside their footprints the 27 Aug Sentinel-2 shows through. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber), tertiary branch roads at closer zoom, and bridge symbols (][ = road bridges, )( = suspension footbridges) from © OpenStreetMap contributors — alignments are pre-flood. Bridges drawn red cross the Lhende–Bhote Koshi–Trishuli flood stem upstream of Galchhi and are presumed destroyed or damaged (exposure-based, not field-verified); amber bridges are outside the flood path, and road sections drawn red (within ~175 m of the flood stem) are presumed flood-damaged on the same exposure basis. The rivers overlay (also OSM) washes rivers in cyan, with the Lhende–Bhote Koshi–Trishuli flood stem highlighted red. The separate flood overlay outlines the flood extent — the widened debris channel traced from the post-event imagery (27 Aug Sentinel-2, with the 28 Aug PlanetScope mosaic filling cloud), classified within ~500 m of the river and generalised to ~30 m; it is approximate, breaks where all post-event scenes are clouded, and is thin and patchy in the hazy uppermost Lhende valley. Coordinates shown are approximate.</p>
-  </details>
-  <p id="lastUpdated" class="muted"></p>
-</aside>
-<button id="panelToggle" aria-expanded="true" aria-controls="panel" aria-label="Toggle info panel">◂</button>
 <div id="stage" aria-label="Interactive before-and-after satellite comparison of Trishuli Bazar">
   <div class="layer" id="layerPre"><div class="world">
     <img id="imgPreS2" alt="Pre-flood satellite view, 3 June 2026 (Sentinel-2)">
     <img id="imgPrePS" alt="Pre-flood satellite view, 27 May 2026 (PlanetScope)">
-    <div class="tiles" id="tilesVanPre" aria-hidden="true"></div>
   </div></div>
   <div class="layer" id="layerPost"><div class="world">
     <img id="imgPostS2" alt="Post-flood satellite view, 27 August 2026 (Sentinel-2)">
     <img id="imgPost28" alt="Post-flood satellite mosaic, 28 August 2026 (PlanetScope)">
     <img id="imgPostPSWide" alt="Flood-morning satellite mosaic, 26 August 2026 (PlanetScope)">
     <img id="imgPostPS" alt="Flood-morning satellite view, 26 August 2026 (PlanetScope)">
-    <div class="tiles" id="tilesSky31" aria-hidden="true"></div>
-    <div class="tiles" id="tilesWv28" aria-hidden="true"></div>
   </div></div>
   <canvas id="contourCanvas" aria-hidden="true"></canvas>
   <canvas id="riverCanvas" aria-hidden="true"></canvas>
   <canvas id="floodCanvas" aria-hidden="true"></canvas>
   <canvas id="roadCanvas" aria-hidden="true"></canvas>
-  <canvas id="focusCanvas" aria-hidden="true"></canvas>
-  <span class="tag" id="tagPre">Pre · 5 Feb (Vantor 0.39 m) + 27 May</span>
+  <span class="tag" id="tagPre">Pre · 27 May / 3 Jun</span>
   <span class="tag" id="tagPost">Post · 26 Aug</span>
   <div id="markers"></div>
   <div id="scalebar"><span id="scaleTxt"></span><div class="bar" id="scaleBar"></div></div>
-  <span id="coords" aria-live="off"></span>
   <div id="handle"><div class="grip">⇔</div></div>
-</div>
 </div>
 
 <div id="controls">
@@ -261,24 +167,32 @@
   </div>
   <button id="zoomIn" aria-label="Zoom in">＋</button>
   <button id="zoomOut" aria-label="Zoom out">－</button>
+  <button id="zoomReset">Reset view</button>
   <button id="markToggle" aria-pressed="true">Labels: on</button>
   <button id="contourToggle" aria-pressed="false">Contours: off</button>
-  <button id="landmarkToggle" aria-pressed="false">Landmarks: off</button>
+  <button id="elevToggle" aria-pressed="true">Elev labels: on</button>
+  <button id="roadToggle" aria-pressed="false">Roads: off</button>
+  <button id="riverToggle" aria-pressed="false">Rivers: off</button>
   <button id="floodToggle" aria-pressed="false">Flood: off</button>
-  <label id="postSrcLabel" for="postSrc">Post:
-    <select id="postSrc" aria-label="Post-flood image source">
-      <option value="ps">26 Aug · flood morning (PlanetScope 3.8 m)</option>
-      <option value="s2" selected>27 Aug · day after, clear (Sentinel-2 10 m)</option>
-      <option value="ps28">28 Aug · day 2 (PlanetScope 3.9 m)</option>
-      <option value="sky31">31 Aug · Trisuli Bazar (SkySat 0.65 m)</option>
-      <option value="wv28">28 Aug · Trisuli Bazar (WorldView-2 0.54 m)</option>
-    </select>
-  </label>
+  <div class="seg" role="group" aria-label="Post-flood image source">
+    <button id="srcPS">Post: 26 Aug (flood morning)</button>
+    <button id="srcS2" class="on">27 Aug (clear)</button>
+    <button id="src28">28 Aug (day 2)</button>
+  </div>
+  <details id="srcNotes">
+    <summary>Imagery sources &amp; notes</summary>
+    <p><span id="legend">
+      <span><i class="dot d-origin"></i>Glacier-collapse origin</span>
+      <span><i class="dot d-high"></i>Severely affected · mass casualties</span>
+      <span><i class="dot d-mid"></i>Roads &amp; infrastructure damaged</span>
+      <span><i class="dot d-city"></i>Major town / city (reference)</span>
+    </span><strong>Trisuli — flood before and after.</strong> Pre: 27 May (PlanetScope 3.8 m) extended along the valley to the glacier-collapse origin with 3 Jun (Sentinel-2). Post: 27 Aug ~10:56 NPT day-after (Sentinel-2, clear), 26 Aug flood morning (PlanetScope mosaic ~10:46/11:30 NPT, hazy) or 28 Aug day 2 (PlanetScope mosaic ~10:42 NPT). Drag the divider to compare, scroll or pinch to zoom, drag to pan.<br><br>Map extent 84.52–85.60°E, 27.70–28.45°N, following the Trishuli from Mugling and Galchhi upstream through Rasuwagadhi into the Lhende valley (Tibet), where a section of glacier at ~5,200 m collapsed on 26 Aug (per ICIMOD/USGS reporting) and triggered the flood — the origin marker is approximate, placed on the glacier basin ~4 km north of Langtang Lirung (~13 km ENE of Rasuwagadhi) where the 27 Aug scene shows fresh disturbance through a cloud gap; the high valley is partly cloud-covered in that scene. PlanetScope 3.8 m imagery from <a href="https://source.coop/planet/disasterdata/nepal-flash-flood-2026-08-26">Planet's open disaster data</a> (CC-BY-NC-4.0): the pre-event scene 20260527_053226_41_254a (contrast-stretched) and full-res flood-morning scene 20260826_050135_34_255f cover the band 85.10–85.20°E, 27.83–27.95°N; the flood-morning view is extended across most of the extent by a 9-scene mosaic from two passes (~10:46 and ~11:30 NPT, rendered ~20 m) — heavy monsoon cloud, with the surge visible in gaps; the day-2 option is a 5-scene PlanetScope mosaic from 28 Aug (~10:42 NPT) with the clearest view of the upper valley and debris corridor; in both, areas outside the swaths fall back to the 27 Aug backdrop. Sentinel-2 10 m imagery (resampled to ~20 m here) covers the full extent: pre-event S2C 45RUL/45RUM (3 Jun) and day-after S2B 45RUL/45RUM (27 Aug, ~10:56 NPT) © ESA Copernicus, via the AWS open Sentinel-2 COG archive. The flood-morning scene carries thin cloud over the town; the 27 Aug scene is mostly clear but coarser. The contour overlay is derived from the Copernicus GLO-30 DEM (© ESA/Airbus, 30 m): vector lines that reveal progressively with zoom (1000 → 500 → 200 → 100 → 50 → 10 m), with elevation labels placed only on terrain gentler than 25° — index lines first, 100 m and 50 m labels appearing as you zoom in. The 10 m lines are streamed as map tiles, fetched only for the area in view. The roads overlay shows trunk/primary/secondary highways (amber), tertiary branch roads at closer zoom, and bridge symbols (][ = road bridges, )( = suspension footbridges) from © OpenStreetMap contributors — alignments are pre-flood. Bridges drawn red cross the Lhende–Bhote Koshi–Trishuli flood stem upstream of Galchhi and are presumed destroyed or damaged (exposure-based, not field-verified); amber bridges are outside the flood path, and road sections drawn red (within ~175 m of the flood stem) are presumed flood-damaged on the same exposure basis. The rivers overlay (also OSM) washes rivers in cyan, with the Lhende–Bhote Koshi–Trishuli flood stem highlighted red. The separate flood overlay outlines the flood extent — the widened debris channel traced from the post-event imagery (27 Aug Sentinel-2, with the 28 Aug PlanetScope mosaic filling cloud), classified within ~500 m of the river and generalised to ~30 m; it is approximate, breaks where all post-event scenes are clouded, and is thin and patchy in the hazy uppermost Lhende valley. Coordinates shown are approximate.</p>
+  </details>
+  <span id="coords"></span>
 </div>
 
 <script>
 (function () {
-  var LAST_UPDATED = "5 September 2026";
   // World spans 84.52-85.60°E, 27.70-28.45°N (north-up, per the Sentinel-2 archive
   // georeferencing). The PlanetScope band scenes only cover ~85.10-85.20°E,
   // 27.83-27.95°N, and their frame is slightly rotated (~0.88°) and scaled relative
@@ -286,16 +200,6 @@
   // 3349x4482 PlanetScope frame into world coordinates.
   var WORLD_W = 36169, WORLD_H = 28011;
   var BW = 84.52, BE = 85.60, BN = 28.45, BS = 27.70;
-  // Focus rectangle for this page: Trisuli Bazar and Bidur, SW 27.9016°N 85.1302°E to
-  // NE 27.9497°N 85.1739°E (~4.3 x 5.3 km). The view is fitted to it, panning is clamped to it,
-  // the area outside is dimmed and only markers inside it are shown; every raster and vector
-  // asset this page loads is hard-cut to this box (assets/trisuli/).
-  var FOCUS_S = 27.9016, FOCUS_W = 85.1302, FOCUS_N = 27.9497, FOCUS_E = 85.1739;
-  function lonToX(lon) { return (lon - BW) / (BE - BW) * WORLD_W; }
-  function latToY(lat) { return (BN - lat) / (BN - BS) * WORLD_H; }
-  // world px: x 20435.5 to 21899.0, y 18685.2 to 20481.6
-  var FOCUS = { x0: lonToX(FOCUS_W), y0: latToY(FOCUS_N), x1: lonToX(FOCUS_E), y1: latToY(FOCUS_S) };
-  var FOCUS_MARGIN = 24;   // screen px kept around the box when fitting
   var PS_XFORM = "matrix(1.020287, -0.015518, 0.015332, 1.011359, 19354.2, 18674.5)";
   // The 26 Aug PlanetScope frame is within ~1 px of the 27 May frame; this composes
   // that measured sub-pixel delta into the same world transform.
@@ -325,40 +229,26 @@
     { x: 9976,  y: 15979, name: "Salyantar", sev: "city" }
   ];
 
-  var PLACES = [
-    { id: "trisuli",  name: "Trisuli Bazar",             x: 21054, y: 19700, zoom: 2.2, caption: "" },
-    { id: "bidur",    name: "Bidur",                     x: 20876, y: 20093, zoom: 2.2, caption: "" },
-    { id: "battar",   name: "Battar",                    x: 21014, y: 20793, zoom: 2.2, caption: "" , outside: true },
-    { id: "devighat", name: "Devighat",                  x: 19690, y: 22007, zoom: 2.2, caption: "" , outside: true },
-    { id: "betrawati",name: "Betrawati",                 x: 22304, y: 17811, zoom: 2.2, caption: "", outside: true },
-    { id: "hp-trisuli",  name: "Trisuli Hydropower Station (24 MW)", x: 20964, y: 19739, zoom: 3.0, caption: "" },
-    { id: "hp-devighat", name: "Devighat Hydropower Station (14 MW)", x: 20252, y: 21214, zoom: 3.0, caption: "" , outside: true }
-  ];
-
-  function place(id, src, w, h, transform, x, y) {
+  function place(id, src, w, h, transform) {
     var img = document.getElementById(id);
     img.src = src;
-    img.style.left = (x || 0) + "px"; img.style.top = (y || 0) + "px";
+    img.style.left = "0px"; img.style.top = "0px";
     img.style.width = w + "px"; img.style.height = h + "px";
     if (transform) { img.style.transformOrigin = "0 0"; img.style.transform = transform; }
     return img;
   }
-  // Every raster on this page is pre-rendered onto the focus box at 1 world px (~2.93 m) by the
-  // build script (assets/trisuli/trisuli.json), so all of them share one placement: the integer
-  // world-px box x 20435-21899, y 18685-20482. Nothing outside the box is shipped.
-  var BOX_PLACE = { left: 20435, top: 18685, width: 1464, height: 1797 };
-  function placeBox(id, src) {
-    return place(id, src, BOX_PLACE.width, BOX_PLACE.height, null, BOX_PLACE.left, BOX_PLACE.top);
-  }
-  placeBox("imgPreS2", "assets/trisuli/pre_s2_20260603.jpg");
-  // 27 May PlanetScope from the 16-bit surface-reflectance product, registered to the Sentinel-2 frame
-  var imgPrePS = placeBox("imgPrePS", "assets/trisuli/pre_ps_sr_20260527.webp");
-  var imgPostS2 = placeBox("imgPostS2", "assets/trisuli/post_s2_20260827.jpg");
-  // 26 Aug flood morning: the 9-scene mosaic plus the full-res scene over the town (both cut to the box);
-  // the 27 Aug Sentinel-2 stays underneath as the backdrop.
-  var imgPost28 = placeBox("imgPost28", "assets/trisuli/ps28_mosaic.webp");
-  var imgPostPSWide = placeBox("imgPostPSWide", "assets/trisuli/ps26_mosaic.webp");
-  var imgPostPS = placeBox("imgPostPS", "assets/trisuli/post_ps_20260826.webp");
+  place("imgPreS2", "assets/pre_s2_20260603.jpg", WORLD_W, WORLD_H);
+  var imgPrePS = place("imgPrePS", "assets/pre_ps_20260527.jpg", 3349, 4482, PS_XFORM);
+  // trim the black scene-edge wedges at the bottom of the PlanetScope frames
+  imgPrePS.style.clipPath = "polygon(0 0, 100% 0, 100% 100%, 39.5% 100%, 0 93%)";
+  var imgPostS2 = place("imgPostS2", "assets/post_s2_20260827.jpg", WORLD_W, WORLD_H);
+  // 26 Aug flood morning: a 9-scene mosaic (passes ~10:46 and ~11:30 NPT, warped to the
+  // world grid, transparent beyond the swaths) plus the original full-res scene over the
+  // towns; the 27 Aug Sentinel-2 stays underneath as the full-extent backdrop.
+  var imgPost28 = place("imgPost28", "assets/ps28_mosaic.webp", WORLD_W, WORLD_H);
+  var imgPostPSWide = place("imgPostPSWide", "assets/ps26_mosaic.webp", WORLD_W, WORLD_H);
+  var imgPostPS = place("imgPostPS", "assets/post_ps_20260826.jpg", 3349, 4482, POST_PS_XFORM);
+  imgPostPS.style.clipPath = "polygon(0 0, 100% 0, 100% 96.1%, 0 80.2%)";
   // --- vector contours: 50 m base interval, div = largest of 1000/500/200/100/50
   // dividing the elevation; classes stream in lazily as the zoom ladder needs them ---
   var contourCanvas = document.getElementById("contourCanvas");
@@ -390,7 +280,7 @@
   function ensureContours(div) {
     if (contourData[div] || contourLoading[div]) return;
     contourLoading[div] = true;
-    fetch("assets/trisuli/contours/div" + div + ".json")
+    fetch("assets/contours/div" + div + ".json")
       .then(function (r) { return r.json(); })
       .then(function (j) {
         j.lines.forEach(computeBB);
@@ -402,7 +292,7 @@
     var key = tx + "_" + ty;
     if (contourTiles[key] || contourLoading[key]) return;
     contourLoading[key] = true;
-    fetch("assets/trisuli/contours/div10/" + key + ".json")
+    fetch("assets/contours/div10/" + key + ".json")
       .then(function (r) { return r.json(); })
       .then(function (j) {
         j.lines.forEach(computeBB);
@@ -511,108 +401,21 @@
     }
   }
   var tagPost = document.getElementById("tagPost");
-
-  // --- generic lazy tile layer for high-res post-flood imagery (SkySat / Pelican) ---
-  // Tiles are T world-px square (4x oversampled WebP, T*F px intrinsic) laid out on
-  // a fixed grid over the whole world; only tiles intersecting the visible rect
-  // (padded by half a tile) are ever fetched, and created <img>s are never removed.
-  // bump when tiles are regenerated so browsers do not serve stale cached tiles
-  var TILE_VER = 3;
-  function makeTileLayer(containerId, dir) {
-    var container = document.getElementById(containerId);
-    var visible = false, indexLoaded = false, index = null, created = {};
-    function ensureIndex() {
-      if (indexLoaded || index) return; // already loaded or load in flight
-      index = {}; // truthy sentinel marking "load in flight"
-      fetch(dir + "/index.json?v=" + TILE_VER)
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-          index = j;
-          index.keySet = {};
-          j.tiles.forEach(function (k) { index.keySet[k] = true; });
-          if (j.overview) {
-            // 1-world-px overview of the whole layer, shown at every zoom underneath the tiles
-            var ov = document.createElement("img");
-            ov.src = dir + "/" + j.overview.src + "?v=" + TILE_VER;
-            ov.alt = ""; ov.decoding = "async"; ov.draggable = false;
-            ov.style.left = j.overview.left + "px"; ov.style.top = j.overview.top + "px";
-            ov.style.width = j.overview.width + "px"; ov.style.height = j.overview.height + "px";
-            container.insertBefore(ov, container.firstChild);
-          }
-          indexLoaded = true;
-          update();
-        });
-    }
-    function setVisible(v) {
-      visible = v;
-      container.style.display = v ? "block" : "none";
-      if (v) { ensureIndex(); update(); }
-      else {
-        // a hidden layer keeps only its overview; tiles come back from the browser cache
-        Object.keys(created).forEach(function (k) { container.removeChild(created[k]); delete created[k]; });
-      }
-    }
-    function update() {
-      if (!visible || !indexLoaded) return;
-      // below minTileScale the overview is sharper than the screen needs; skip tile fetches
-      if (index.minTileScale && scale < index.minTileScale) return;
-      var T = index.T;
-      var wx0 = -panX / scale, wy0 = -panY / scale;
-      var wx1 = (stage.clientWidth - panX) / scale, wy1 = (stage.clientHeight - panY) / scale;
-      wx0 -= T / 2; wy0 -= T / 2; wx1 += T / 2; wy1 += T / 2;
-      var tx0 = Math.floor(wx0 / T), tx1 = Math.floor(wx1 / T);
-      var ty0 = Math.floor(wy0 / T), ty1 = Math.floor(wy1 / T);
-      // drop tiles outside the (half-tile padded) view so decoded-image memory stays bounded;
-      // they come straight back from the browser cache when panned into view again
-      Object.keys(created).forEach(function (k) {
-        var p = k.split("_"), kx = +p[0], ky = +p[1];
-        if (kx < tx0 || kx > tx1 || ky < ty0 || ky > ty1) { container.removeChild(created[k]); delete created[k]; }
-      });
-      for (var tx = tx0; tx <= tx1; tx++) {
-        for (var ty = ty0; ty <= ty1; ty++) {
-          var key = tx + "_" + ty;
-          if (created[key] || !index.keySet[key]) continue;
-          var img = document.createElement("img");
-          img.src = dir + "/" + key + ".webp?v=" + TILE_VER;
-          img.alt = "";
-          img.decoding = "async";
-          img.draggable = false;
-          img.style.left = (tx * T) + "px";
-          img.style.top = (ty * T) + "px";
-          img.style.width = T + "px";
-          img.style.height = T + "px";
-          container.appendChild(img);
-          created[key] = img;
-        }
-      }
-    }
-    return { setVisible: setVisible, update: update };
-  }
-  var tilesSky31 = makeTileLayer("tilesSky31", "assets/trisuli/tiles/skysat");
-  var tilesWv28 = makeTileLayer("tilesWv28", "assets/trisuli/tiles/vantor_post");
-  // pre side: Vantor Legion 5 Feb 2026 (0.39 m) over the west of the box, always on
-  var tilesVanPre = makeTileLayer("tilesVanPre", "assets/trisuli/tiles/vantor_pre");
-  tilesVanPre.setVisible(true);
-
   function setPostSrc(which) {
     imgPost28.style.display = which === "ps28" ? "block" : "none";
     imgPostPSWide.style.display = which === "ps" ? "block" : "none";
     imgPostPS.style.display = which === "ps" ? "block" : "none";
-    tilesSky31.setVisible(which === "sky31");
-    tilesWv28.setVisible(which === "wv28");
     tagPost.textContent = which === "s2" ? "Post · 27 Aug (Sentinel-2)"
       : which === "ps" ? "Post · 26 Aug flood morning"
-      : which === "ps28" ? "Post · 28 Aug (PlanetScope) + 27 Aug"
-      : which === "sky31" ? "Post · 31 Aug (SkySat) + 27 Aug"
-      : "Post · 28 Aug (WorldView-2) + 27 Aug";
-    var select = document.getElementById("postSrc");
-    if (select.value !== which) select.value = which;
-    pushHash();
+      : "Post · 28 Aug (PlanetScope) + 27 Aug";
+    document.getElementById("srcS2").classList.toggle("on", which === "s2");
+    document.getElementById("srcPS").classList.toggle("on", which === "ps");
+    document.getElementById("src28").classList.toggle("on", which === "ps28");
   }
-  setPostSrc("wv28");
-  document.getElementById("postSrc").addEventListener("change", function (e) {
-    setPostSrc(e.target.value);
-  });
+  setPostSrc("s2");
+  document.getElementById("srcS2").onclick = function () { setPostSrc("s2"); };
+  document.getElementById("srcPS").onclick = function () { setPostSrc("ps"); };
+  document.getElementById("src28").onclick = function () { setPostSrc("ps28"); };
 
   // --- rivers overlay (© OpenStreetMap contributors): cyan wash, with the
   // Lhende-Bhote Koshi-Trishuli flood stem highlighted red ---
@@ -626,7 +429,7 @@
   function ensureRivers() {
     if (riverData || riverLoading) return;
     riverLoading = true;
-    fetch("assets/trisuli/rivers.json")
+    fetch("assets/rivers.json")
       .then(function (r) { return r.json(); })
       .then(function (j) {
         j.rivers.forEach(computeBB);
@@ -692,14 +495,14 @@
   }
 
   // --- flood extent overlay: outflow outline of the debris channel traced
-  // from the 27-28 Aug scenes (see assets/trisuli/flood_extent.json) ---
+  // from the 27-28 Aug scenes (see assets/flood_extent.json) ---
   var floodCanvas = document.getElementById("floodCanvas");
   var fctx = floodCanvas.getContext("2d");
-  var floodOn = false, floodData = null, floodLoading = false;
+  var floodOn = true, floodData = null, floodLoading = false;
   function ensureFlood() {
     if (floodData || floodLoading) return;
     floodLoading = true;
-    fetch("assets/trisuli/flood_extent.json")
+    fetch("assets/flood_extent.json")
       .then(function (r) { return r.json(); })
       .then(function (j) {
         floodData = j.polys.map(function (p) { var L = { p: p }; computeBB(L); return L; });
@@ -761,7 +564,7 @@
   function ensureRoads() {
     if (roadData || roadLoading) return;
     roadLoading = true;
-    fetch("assets/trisuli/roads.json")
+    fetch("assets/roads.json")
       .then(function (r) { return r.json(); })
       .then(function (j) {
         j.roads.forEach(computeBB);
@@ -932,9 +735,6 @@
   var scale = 0.2, panX = 0, panY = 0, minScale = 0.05, maxScale = 8;
   var swipeFrac = 0.5, mode = "swipe", showMarks = true;
 
-  MARKERS = MARKERS.filter(function (m) {
-    return m.x >= FOCUS.x0 && m.x <= FOCUS.x1 && m.y >= FOCUS.y0 && m.y <= FOCUS.y1;
-  });
   MARKERS.forEach(function (m) {
     var el = document.createElement("div");
     el.className = "marker" + (m.sev ? " sev-" + m.sev : "");
@@ -944,43 +744,7 @@
     m.el = el;
   });
 
-  // Keep the focus box on screen. In a dimension where the box is wider than the stage,
-  // its edges may not move inside the viewport edges (no dead space beyond the box).
-  // Where it is narrower, it stays centred, which at minimum zoom gives the fit margin.
-  function clampPan() {
-    var sw = stage.clientWidth, sh = stage.clientHeight;
-    var bx0 = FOCUS.x0 * scale, bx1 = FOCUS.x1 * scale;
-    var by0 = FOCUS.y0 * scale, by1 = FOCUS.y1 * scale;
-    if (bx1 - bx0 <= sw) panX = (sw - bx0 - bx1) / 2;
-    else panX = Math.min(-bx0, Math.max(sw - bx1, panX));
-    if (by1 - by0 <= sh) panY = (sh - by0 - by1) / 2;
-    else panY = Math.min(-by0, Math.max(sh - by1, panY));
-  }
-
-  // dim everything outside the focus box and outline it
-  var focusCanvas = document.getElementById("focusCanvas");
-  var fctx = focusCanvas.getContext("2d");
-  function drawFocus() {
-    var dpr = window.devicePixelRatio || 1;
-    var w = stage.clientWidth, h = stage.clientHeight;
-    if (focusCanvas.width !== Math.round(w * dpr) || focusCanvas.height !== Math.round(h * dpr)) {
-      focusCanvas.width = Math.round(w * dpr); focusCanvas.height = Math.round(h * dpr);
-      focusCanvas.style.width = w + "px"; focusCanvas.style.height = h + "px";
-    }
-    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.clearRect(0, 0, w, h);
-    var x = FOCUS.x0 * scale + panX, y = FOCUS.y0 * scale + panY;
-    var bw = (FOCUS.x1 - FOCUS.x0) * scale, bh = (FOCUS.y1 - FOCUS.y0) * scale;
-    fctx.fillStyle = "rgba(5,8,11,0.55)";
-    fctx.fillRect(0, 0, w, h);
-    fctx.clearRect(x, y, bw, bh);
-    fctx.lineWidth = 1.5;
-    fctx.strokeStyle = "rgba(95,179,196,0.9)";
-    fctx.strokeRect(x, y, bw, bh);
-  }
-
   function apply() {
-    clampPan();
     var t = "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
     worlds.forEach(function (w) { w.style.transform = t; });
     var sw = stage.clientWidth;
@@ -998,12 +762,7 @@
     drawRivers();
     drawFlood();
     drawRoads();
-    tilesSky31.update();
-    tilesWv28.update();
-    tilesVanPre.update();
-    drawFocus();
     updateScalebar();
-    pushHash();
   }
 
   // ~2.933 m per world px (33490 world px per degree of longitude at ~28.1°N)
@@ -1017,15 +776,14 @@
     document.getElementById("scaleTxt").textContent = d >= 1000 ? (d / 1000) + " km" : d + " m";
   }
 
-  // scale at which the focus box fits inside the stage with FOCUS_MARGIN around it
-  function fitScale() {
-    return Math.min((stage.clientWidth - 2 * FOCUS_MARGIN) / (FOCUS.x1 - FOCUS.x0),
-                    (stage.clientHeight - 2 * FOCUS_MARGIN) / (FOCUS.y1 - FOCUS.y0));
-  }
   function fit() {
-    scale = minScale = fitScale();
-    panX = stage.clientWidth / 2 - (FOCUS.x0 + FOCUS.x1) / 2 * scale;
-    panY = stage.clientHeight / 2 - (FOCUS.y0 + FOCUS.y1) / 2 * scale;
+    // fit the PlanetScope band (the original framing), but allow zooming out to the full extent
+    scale = Math.min(stage.clientWidth / 3349, stage.clientHeight / 4482);
+    minScale = Math.min(scale * 0.8, stage.clientHeight / WORLD_H, stage.clientWidth / WORLD_W);
+    // center between Bidur and Battar
+    panX = stage.clientWidth / 2 - 20942 * scale;
+    panY = stage.clientHeight / 2 - 20440 * scale;
+    var z = 1.6; zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, z);
     apply();
   }
 
@@ -1104,9 +862,9 @@
   document.getElementById("modePost").onclick = function () { setMode("post"); };
   document.getElementById("zoomIn").onclick = function () { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1.4); };
   document.getElementById("zoomOut").onclick = function () { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.4); };
+  document.getElementById("zoomReset").onclick = fit;
   document.getElementById("contourToggle").onclick = function () {
     contoursOn = !contoursOn;
-    contourLabelsOn = contoursOn;   // elevation labels come on and off with the contours
     contourCanvas.style.display = contoursOn ? "block" : "none";
     this.textContent = "Contours: " + (contoursOn ? "on" : "off");
     this.setAttribute("aria-pressed", String(contoursOn));
@@ -1119,14 +877,25 @@
     this.setAttribute("aria-pressed", String(floodOn));
     apply();
   };
-  // Landmarks = roads (with bridges) + rivers together
-  document.getElementById("landmarkToggle").onclick = function () {
-    var on = !(roadsOn || riversOn);
-    roadsOn = riversOn = on;
-    roadCanvas.style.display = riverCanvas.style.display = on ? "block" : "none";
-    this.textContent = "Landmarks: " + (on ? "on" : "off");
-    this.setAttribute("aria-pressed", String(on));
+  document.getElementById("riverToggle").onclick = function () {
+    riversOn = !riversOn;
+    riverCanvas.style.display = riversOn ? "block" : "none";
+    this.textContent = "Rivers: " + (riversOn ? "on" : "off");
+    this.setAttribute("aria-pressed", String(riversOn));
     apply();
+  };
+  document.getElementById("roadToggle").onclick = function () {
+    roadsOn = !roadsOn;
+    roadCanvas.style.display = roadsOn ? "block" : "none";
+    this.textContent = "Roads: " + (roadsOn ? "on" : "off");
+    this.setAttribute("aria-pressed", String(roadsOn));
+    apply();
+  };
+  document.getElementById("elevToggle").onclick = function () {
+    contourLabelsOn = !contourLabelsOn;
+    this.textContent = "Elev labels: " + (contourLabelsOn ? "on" : "off");
+    this.setAttribute("aria-pressed", String(contourLabelsOn));
+    drawContours();
   };
   document.getElementById("markToggle").onclick = function () {
     showMarks = !showMarks;
@@ -1134,161 +903,13 @@
     this.setAttribute("aria-pressed", String(showMarks));
     apply();
   };
-  window.addEventListener("resize", function () {
-    minScale = fitScale();
-    if (scale < minScale) scale = minScale;
-    apply();
-  });
+  window.addEventListener("resize", apply);
   window.addEventListener("keydown", function (e) {
     if (e.key === "+" || e.key === "=") zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1.3);
     if (e.key === "-") zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.3);
   });
 
-  // --- left side panel: places list + collapse/expand ---
-  var panel = document.getElementById("panel");
-  var panelToggle = document.getElementById("panelToggle");
-  var placeList = document.getElementById("placeList");
-  var placeCaption = document.getElementById("placeCaption");
-  document.getElementById("lastUpdated").textContent = "Last updated: " + LAST_UPDATED;
-
-  PLACES.forEach(function (p) {
-    var li = document.createElement("li");
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "place";
-    btn.dataset.id = p.id;
-    btn.appendChild(document.createTextNode(p.name));
-    if (p.outside) {
-      var note = document.createElement("span");
-      note.className = "outside-note";
-      note.textContent = " (outside box)";
-      btn.appendChild(note);
-    }
-    btn.onclick = function () { selectPlace(p); };
-    li.appendChild(btn);
-    placeList.appendChild(li);
-    p.el = btn;
-  });
-
-  function selectPlace(p) {
-    setMode("swipe");
-    scale = Math.min(maxScale, Math.max(minScale, p.zoom));
-    panX = stage.clientWidth / 2 - p.x * scale;
-    panY = stage.clientHeight / 2 - p.y * scale;
-    apply();
-    PLACES.forEach(function (q) { q.el.classList.toggle("on", q === p); });
-    if (p.caption) {
-      placeCaption.textContent = p.caption;
-      placeCaption.hidden = false;
-    } else {
-      placeCaption.textContent = "";
-      placeCaption.hidden = true;
-    }
-  }
-
-  function setPanelOpen(open) {
-    panel.classList.toggle("collapsed", !open);
-    panelToggle.setAttribute("aria-expanded", String(open));
-    panelToggle.textContent = open ? "◂" : "▸ Info";
-    var fired = false;
-    function fireResize() {
-      if (fired) return;
-      fired = true;
-      panel.removeEventListener("transitionend", onEnd);
-      window.dispatchEvent(new Event("resize"));
-    }
-    function onEnd(e) {
-      if (e.target === panel && e.propertyName === "width") fireResize();
-    }
-    panel.addEventListener("transitionend", onEnd);
-    setTimeout(fireResize, 350);
-  }
-  panelToggle.onclick = function () { setPanelOpen(panel.classList.contains("collapsed")); };
-
-  // Desktop starts with the panel open, mobile (<=640px) collapsed; decided before fit()
-  // so the stage is measured at its final width on first render.
-  var panelOpenInitially = !window.matchMedia("(max-width: 640px)").matches;
-  panel.classList.toggle("collapsed", !panelOpenInitially);
-  panelToggle.setAttribute("aria-expanded", String(panelOpenInitially));
-  panelToggle.textContent = panelOpenInitially ? "◂" : "▸ Info";
-
-  // --- view state in the URL hash, shared format with the other page:
-  //   #m=<pre|swipe|post>&src=<post source>&z=<scale>&c=<lat>,<lon>&l=<active layers>&s=<swipe 0-1>
-  // written (debounced, replaceState) on every apply(), restored on load and on hashchange,
-  // and mirrored onto the top-bar link so switching pages keeps the same view. This page's own
-  // limits still apply on restore: scale is kept within [minScale, maxScale] and apply() clamps
-  // the pan where the page has a focus box. ---
-  var navLink = document.querySelector("#topbar a.nav");
-  var navTarget = navLink ? navLink.getAttribute("href").split("#")[0] : null;
-  var hashTimer = 0, restoring = false;
-  function activeLayers() {
-    var l = [];
-    if (showMarks) l.push("labels");
-    if (contoursOn) l.push("contours");
-    if (contourLabelsOn) l.push("elev");
-    if (roadsOn) l.push("roads");
-    if (riversOn) l.push("rivers");
-    if (floodOn) l.push("flood");
-    return l;
-  }
-  function viewHash() {
-    var cx = (stage.clientWidth / 2 - panX) / scale, cy = (stage.clientHeight / 2 - panY) / scale;
-    var lon = BW + (BE - BW) * cx / WORLD_W, lat = BN - (BN - BS) * cy / WORLD_H;
-    var parts = ["m=" + mode, "src=" + document.getElementById("postSrc").value, "z=" + scale.toFixed(3),
-                 "c=" + lat.toFixed(5) + "," + lon.toFixed(5), "l=" + activeLayers().join(",")];
-    if (mode === "swipe") parts.push("s=" + swipeFrac.toFixed(2));
-    return "#" + parts.join("&");
-  }
-  function pushHash() {
-    if (restoring || hashTimer) return;
-    hashTimer = setTimeout(function () {
-      hashTimer = 0;
-      var h = viewHash();
-      if (location.hash !== h) history.replaceState(null, "", h);
-      if (navLink) navLink.href = navTarget + h;
-    }, 150);
-  }
-  function setToggle(id, on) {
-    var b = document.getElementById(id);
-    if (b && (b.getAttribute("aria-pressed") === "true") !== on) b.click();
-  }
-  function restoreFromHash() {
-    var h = location.hash.replace(/^#/, "");
-    if (!h) return;
-    var q = {};
-    h.split("&").forEach(function (kv) { var i = kv.indexOf("="); if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
-    restoring = true;
-    if (q.m === "pre" || q.m === "swipe" || q.m === "post") setMode(q.m);
-    if (q.src && document.querySelector('#postSrc option[value="' + q.src + '"]')) setPostSrc(q.src);
-    var sf = parseFloat(q.s);
-    if (!isNaN(sf)) swipeFrac = Math.min(1, Math.max(0, sf));
-    if (q.l !== undefined) {
-      var L = q.l ? q.l.split(",") : [];
-      var has = function (k) { return L.indexOf(k) >= 0; };
-      setToggle("markToggle", has("labels"));
-      setToggle("contourToggle", has("contours"));
-      setToggle("elevToggle", has("elev"));
-      setToggle("roadToggle", has("roads"));
-      setToggle("riverToggle", has("rivers"));
-      setToggle("landmarkToggle", has("roads") || has("rivers"));
-      setToggle("floodToggle", has("flood"));
-    }
-    var z = parseFloat(q.z), c = (q.c || "").split(",").map(parseFloat);
-    if (z > 0) scale = Math.min(maxScale, Math.max(minScale, z));
-    if (c.length === 2 && !isNaN(c[0]) && !isNaN(c[1])) {
-      var wx = (c[1] - BW) / (BE - BW) * WORLD_W, wy = (BN - c[0]) / (BN - BS) * WORLD_H;
-      panX = stage.clientWidth / 2 - wx * scale;
-      panY = stage.clientHeight / 2 - wy * scale;
-    }
-    restoring = false;
-    apply();
-  }
-  window.addEventListener("hashchange", function () {
-    if (location.hash !== viewHash()) restoreFromHash();
-  });
-
-  fit();
-  restoreFromHash();
+  fit(); scale = 0.5; panX = stage.clientWidth/2 - 20900*scale; panY = stage.clientHeight/2 - 20300*scale; setPostSrc("s2"); setMode("post"); apply(); setTimeout(apply, 4000);
 })();
 </script>
 
